@@ -550,8 +550,8 @@ namespace Comfy::Studio::Editor
 
 	std::tuple<bool, vec2> TargetRenderWindow::CalculateLinkStarButtonPosition(const TimelineTarget& target, const TimelineTarget& prev)
 	{
-		auto [currTargetTime, currButtonTime, currTargetTick, currButtonTick, currFlyingTime] = workingChart->TempoMap.GetTargetSpawnTimes(target);
-		auto [prevTargetTime, prevButtonTime, prevTargetTick, prevButtonTick, prevFlyingTime] = workingChart->TempoMap.GetTargetSpawnTimes(prev);
+		auto [currTargetTime, currButtonTime, currTargetTick, currButtonTick, currFlyingTime, currRealBPM] = workingChart->TempoMap.GetTargetSpawnTimes(target);
+		auto [prevTargetTime, prevButtonTime, prevTargetTick, prevButtonTick, prevFlyingTime, preRealBPM] = workingChart->TempoMap.GetTargetSpawnTimes(prev);
 		BeatTick cursorTick = timeline.GetCursorTick();
 		TimeSpan cursorTime = timeline.GetCursorTime();
 		auto currProperties = Rules::TryGetProperties(target);
@@ -611,7 +611,7 @@ namespace Comfy::Studio::Editor
 			if (!target.Flags.IsLink)
 				continue;
 
-			auto [targetTime, buttonTime, targetTick, buttonTick, flyingTime] = workingChart->TempoMap.GetTargetSpawnTimes(target);
+			auto [targetTime, buttonTime, targetTick, buttonTick, flyingTime, realBPM] = workingChart->TempoMap.GetTargetSpawnTimes(target);
 
 			if (target.IsSelected)
 				chain.AnySelected = true;

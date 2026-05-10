@@ -739,20 +739,6 @@ namespace Comfy::Studio::Editor
 						trailData.ProgressMax = std::numeric_limits<f32>::max();
 						trailData.Opacity = hitMissProgress;
 					}
-					/*TODO：长条轨迹
-					* Clove的实现方式与编辑器耦合，需要考虑新的方式实现
-					if (onScreenTarget.IsLongStart())
-					{
-						f32 lengthFractions = workingChart->Targets.GetLengthInTicks(target).BeatsFraction();
-						f32 length = lengthFractions / 4.0f * flyingTime.TotalSeconds();
-
-						auto& trailData = context.RenderHelperEx.EmplaceButtonTrail();
-						context.RenderHelperEx.ConstructButtonTrail(trailData, target.Type, progress, progressUnbound, properties, onScreenPair.FlyingTime);
-						trailData.Long = true;
-						trailData.Length = length * flyingTimeFactor;
-						trailData.FlyingTime = flyingTime.TotalSeconds();
-					}
-					*/
 				}
 
 				if (onScreenPair.TargetCount > 1)

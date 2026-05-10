@@ -114,7 +114,7 @@ namespace Comfy::Studio::Editor
 			{
 				if (outTarget.Flags.IsChain && !outTarget.Flags.IsChainStart)
 					outTarget.Properties.Position.x -= Rules::ChainFragmentStartEndOffsetDistance * (outTarget.Type == ButtonType::SlideL ? -1.0f : +1.0f);
-				//Note:目前的实现并没有考虑多压长条，长条头尾相接等情况，需要考虑重写
+				//Note: It's still need to fix if chart have multi sustain note
 				if (outTarget.Flags.IsLong) 
 				{
 					if (StartLongCheck)

@@ -371,7 +371,7 @@ namespace Comfy::Studio
 				previousImGuiIniUndoStack.erase(previousImGuiIniUndoStack.end() - 1);
 				imGuiLayoutHasBeenSetToDefaultWhileCurrentPopupOpen = false;
 			}
-			//暂无作用，添加固定布局按钮
+			//Todo: Fix DockPanel
 			//Gui::MenuItemDontClosePopup("Fix DockPanel", nullptr, false, false);
 
 			Gui::EndMenu();
