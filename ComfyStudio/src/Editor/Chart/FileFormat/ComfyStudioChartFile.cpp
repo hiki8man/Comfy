@@ -13,7 +13,6 @@ namespace Comfy::Studio::Editor
 	{
 		// NOTE: Increment major version for breaking changes and minor version for backwards and forward compatible additions
 		enum class Version : u16 { CurrentMajor = 1, CurrentMinor = 8, };
-		static u16 F2xMajorVersion = 2;
 		enum class Endianness : u16 { Little = 'L', Big = 'B' };
 		enum class PointerSize : u16 { Bit32 = 32, Bit64 = 64 };
 		enum class HeaderFlags : u32 { None = 0xFFFFFFFF };
@@ -265,7 +264,8 @@ namespace Comfy::Studio::Editor
 			return IO::StreamResult::BadFormat;
 
 		//if ((header.MajorVersion > Version::CurrentMajor)
-		if (static_cast<u16>(header.MajorVersion) > F2xMajorVersion)
+		static bool isF2xFile = static_cast<u16>(header.MajorVersion) == 2;
+		if ((header.MajorVersion > Version::CurrentMajor) || isF2xFile)
 			return IO::StreamResult::BadFormat;
 
 		if (header.Endianness != Endianness::Little)
@@ -445,7 +445,7 @@ namespace Comfy::Studio::Editor
 																	{ 
 																		field.ReadFunc(reader, chart.Targets[i]);
 																		// For F2x Star ID is same as Conut, we need convert it to SlideL to make sure it's works fine
-																		if ((chart.Targets[i].Type == ButtonType::Count) && (static_cast<u16>(header.MajorVersion) == F2xMajorVersion))
+																		if ((chart.Targets[i].Type == ButtonType::Count) && (isF2xFile))
 																			chart.Targets[i].Type = ButtonType::SlideR;
 																	};
 																	break;
