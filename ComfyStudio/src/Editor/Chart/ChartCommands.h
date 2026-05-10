@@ -530,6 +530,15 @@ namespace Comfy::Studio::Editor
 		std::string_view GetName() const override { return "Change Target Distances"; }
 	};
 
+	class ChangeTargetListAmplitude : public ChangeTargetListProperties
+	{
+	public:
+		ChangeTargetListAmplitude(Chart& chart, std::vector<Data> data) : ChangeTargetListProperties(chart, std::move(data), TargetPropertyFlags_Amplitude) {}
+
+	public:
+		std::string_view GetName() const override { return "Change Target Amplitude"; }
+	};
+
 	class InterpolateTargetListDistances : public ChangeTargetListDistances
 	{
 	public:
@@ -537,6 +546,15 @@ namespace Comfy::Studio::Editor
 
 	public:
 		std::string_view GetName() const override { return "Interpolate Target Distances"; }
+	};
+
+	class InterpolateTargetListAmplitude : public ChangeTargetListAmplitude
+	{
+	public:
+		using ChangeTargetListAmplitude::ChangeTargetListAmplitude;
+
+	public:
+		std::string_view GetName() const override { return "Interpolate Target Amplitude"; }
 	};
 
 	class ApplyTargetListAngleIncrements : public ChangeTargetListAngles
@@ -633,6 +651,67 @@ namespace Comfy::Studio::Editor
 		Chart& chart;
 		std::vector<Data> targetData;
 		bool newHasProperties;
+	};
+
+	// Add change success note support
+	class ChangeTargetListIsChance : public Undo::Command
+	{
+	public:
+		struct Data
+		{
+			TimelineTargetID ID;
+			bool NewValue, OldValue;
+		};
+
+	public:
+		ChangeTargetListIsChance(Chart& chart, std::vector<Data> data)
+			: chart(chart), targetData(std::move(data))
+		{
+			for (auto& data : targetData)
+			{
+				const auto& target = chart.Targets[chart.Targets.FindIndex(data.ID)];
+				data.OldValue = target.Flags.IsChance;
+			}
+		}
+
+	public:
+		void Undo() override
+		{
+			for (const auto& data : targetData)
+			{
+				auto& target = chart.Targets[chart.Targets.FindIndex(data.ID)];
+				target.Flags.IsChance = data.OldValue;
+			}
+		}
+
+		void Redo() override
+		{
+			for (const auto& data : targetData)
+			{
+				auto& target = chart.Targets[chart.Targets.FindIndex(data.ID)];
+				target.Flags.IsChance = data.NewValue;
+			}
+		}
+
+		Undo::MergeResult TryMerge(Command& commandToMerge) override
+		{
+			return Undo::MergeResult::Failed;
+		}
+
+		std::string_view GetName() const override { return "Change Chance Target"; }
+
+	private:
+		Chart& chart;
+		std::vector<Data> targetData;
+	};
+
+	class ToggleTargetListIsChance : public ChangeTargetListIsChance
+	{
+	public:
+		using ChangeTargetListIsChance::ChangeTargetListIsChance;
+
+	public:
+		std::string_view GetName() const override { return "Toggle Target Chance"; }
 	};
 
 	class ChangeTargetListIsHold : public Undo::Command

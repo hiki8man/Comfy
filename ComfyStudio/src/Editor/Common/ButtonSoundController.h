@@ -15,6 +15,7 @@ namespace Comfy::Studio::Editor
 		ChainSlideSuccess,
 		ChainSlideFailure,
 		SlideTouch,
+		Chance,
 		Count,
 	};
 
@@ -41,6 +42,7 @@ namespace Comfy::Studio::Editor
 
 		void PlayButtonSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlaySlideSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
+		void PlayChanceSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 
 		void PlayChainSoundStart(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlayChainSoundSuccess(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});

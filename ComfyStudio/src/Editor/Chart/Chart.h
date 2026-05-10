@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 #include "Types.h"
 #include "SortedTargetList.h"
 #include "SortedTempoMap.h"
@@ -64,7 +64,7 @@ namespace Comfy::Studio::Editor
 	public:
 		// NOTE: In case there is no audio file to take as a reference
 		static constexpr auto FallbackDuration = TimeSpan::FromMinutes(1.5);
-		static constexpr auto FallbackSongTitle = std::string_view { u8"É_É~Å[" };
+		static constexpr auto FallbackSongTitle = std::string_view { u8"Ë≠úÈù¢‰ΩúÊàê" };
 
 	public:
 		// NOTE: An empty path means the chart hasn't yet been saved to nor has been loaded from disk

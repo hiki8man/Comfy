@@ -197,7 +197,7 @@ namespace Comfy::Studio::Editor
 				Gui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 
 			auto isHoldValueGetter = [](auto& t) { return static_cast<GuiProperty::Boolean>(t.Flags.IsHold); };
-			auto isHoldConditionGetter = [](auto& t) { return !IsSlideButtonType(t.Type); };
+			auto isHoldConditionGetter = [](auto& t) { return !IsSlideButtonType(t.Type) && !t.Flags.IsChance; };
 			BooleanGui("Is Hold", isHoldValueGetter, isHoldConditionGetter, [&](const bool newValue)
 			{
 				std::vector<ChangeTargetListIsHold::Data> targetData;
@@ -229,6 +229,27 @@ namespace Comfy::Studio::Editor
 				if (!targetData.empty())
 					undoManager.Execute<ChangeTargetListHasProperties>(chart, std::move(targetData), !newValue);
 			});
+			// Add change success note support
+			auto isChanceValueGetter = [](auto& t) { return static_cast<GuiProperty::Boolean>(t.Flags.IsChance); };
+			auto isChanceConditionGetter = [](auto& t) { return !t.Flags.IsChain && !t.Flags.IsHold; };
+			BooleanGui("Is Chance", isChanceValueGetter, isChanceConditionGetter, [&](const bool newValue)
+				{
+					std::vector<ChangeTargetListIsChance::Data> targetData;
+					targetData.reserve(selectedTargets.size());
+
+					for (const auto& targetView : selectedTargets)
+					{
+						if (!isChanceConditionGetter(*targetView))
+							continue;
+
+						auto& data = targetData.emplace_back();
+						data.ID = targetView.Target->ID;
+						data.NewValue = newValue;
+					}
+
+					if (!targetData.empty())
+						undoManager.Execute<ChangeTargetListIsChance>(chart, std::move(targetData));
+				});
 
 			PropertyGui(chart, "Position X", TargetPropertyType_PositionX);
 			PropertyGui(chart, "Position Y", TargetPropertyType_PositionY);

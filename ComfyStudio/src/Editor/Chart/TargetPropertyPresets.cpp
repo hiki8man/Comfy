@@ -89,10 +89,10 @@ namespace Comfy::Studio::Editor
 		{
 			if (pairCount != expectedTypesArray.size())
 				return false;
-
+			const auto maxindex = expectedTypesArray.size() - 1;
 			for (size_t i = 0; i < expectedTypesArray.size(); i++)
 			{
-				if (syncPair[i].Type != expectedTypesArray[i])
+				if (syncPair[i].Type != expectedTypesArray[maxindex - i])
 					return false;
 			}
 			return true;
@@ -157,9 +157,9 @@ namespace Comfy::Studio::Editor
 					}
 
 					if (settings.SameDirectionAngles)
-						slaveProperties.Angle = Detail::IsUpperPartOfSyncPair(masterTargetType, masterTarget.Flags) ? upperAngle : lowerAngle;
+						slaveProperties.Angle = !Detail::IsUpperPartOfSyncPair(masterTargetType, masterTarget.Flags) ? upperAngle : lowerAngle;
 					else
-						slaveProperties.Angle = Detail::IsUpperPartOfSyncPair(slaveTargetType, slaveTarget.Flags) ? upperAngle : lowerAngle;
+						slaveProperties.Angle = !Detail::IsUpperPartOfSyncPair(slaveTargetType, slaveTarget.Flags) ? upperAngle : lowerAngle;
 
 					if (preset == DynamicSyncPreset::VerticalLeft)
 						slaveProperties.Angle *= -1.0f;
@@ -209,9 +209,9 @@ namespace Comfy::Studio::Editor
 					else
 					{
 						if (settings.SameDirectionAngles)
-							slaveProperties.Angle = Detail::IsUpperPartOfSyncPair(masterTarget.Type, masterTarget.Flags) ? leftAngle : rightAngle;
+							slaveProperties.Angle = !Detail::IsUpperPartOfSyncPair(masterTarget.Type, masterTarget.Flags) ? leftAngle : rightAngle;
 						else
-							slaveProperties.Angle = Detail::IsUpperPartOfSyncPair(slaveTarget.Type, slaveTarget.Flags) ? leftAngle : rightAngle;
+							slaveProperties.Angle = !Detail::IsUpperPartOfSyncPair(slaveTarget.Type, slaveTarget.Flags) ? leftAngle : rightAngle;
 					}
 
 					if (preset == DynamicSyncPreset::HorizontalDown)
@@ -300,15 +300,16 @@ namespace Comfy::Studio::Editor
 
 			if (pairCount != preset.TargetCount)
 				return false;
-
+			// SyncPreset is use TSXO, we need let it change to OXST
+			const auto maxindex = pairCount - 1;
 			for (size_t i = 0; i < pairCount; i++)
 			{
-				if (preset.Targets[i].Type != syncPair[i].Type)
+				if (preset.Targets[i].Type != syncPair[maxindex - i].Type)
 					return false;
 			}
 
 			for (size_t i = 0; i < pairCount; i++)
-				outProperties[i].NewValue = preset.Targets[i].Properties;
+				outProperties[maxindex - i].NewValue = preset.Targets[i].Properties;
 
 			return true;
 		}

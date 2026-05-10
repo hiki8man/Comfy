@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include "IDTypes.h"
+#include <algorithm>
 
 namespace Comfy
 {

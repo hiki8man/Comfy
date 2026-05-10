@@ -184,6 +184,7 @@ namespace Comfy::Studio::Editor
 		size_t CountSelectedTargets() const;
 
 		void ToggleSelectedTargetsHolds(Undo::UndoManager& undoManager, Chart& chart);
+		void ToggleSelectedTargetsChance(Undo::UndoManager& undoManager, Chart& chart);
 
 		void SelectAllTargets(Chart& chart);
 		void DeselectAllTargets(Chart& chart);

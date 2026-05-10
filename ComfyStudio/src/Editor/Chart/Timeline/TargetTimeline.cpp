@@ -6,6 +6,7 @@
 #include "Time/TimeSpan.h"
 #include "ImGui/Extensions/PropertyEditor.h"
 #include <FontIcons.h>
+#include <iterator>
 
 // BUG: SELECTING MOVING AND OR MODIFTING CHAIN SLIDES CAN SPAM COMMANDS AND FUCK FRAMETIMES, IS SOMETHING WRONG WITH TimelineTargetID??
 // BUG: "Dagorth Ur" incorrect silent single pixel height waveform part visible right at the start when timeline is scrolled just slightly to the right --> TargetTimeline::DrawCheckUpdateWaveform()
@@ -450,7 +451,8 @@ namespace Comfy::Studio::Editor
 			Count
 		};
 
-		static constexpr auto settingsClickBehavior = TargetTimelineInfoColumnClickBehavior::InsertHovered;
+		//Remove TargetTimelineInfoColumnClickBehavior
+		static constexpr auto settingsClickBehavior = TargetTimelineInfoColumnClickBehavior::None;
 
 		if (settingsClickBehavior != TargetTimelineInfoColumnClickBehavior::None)
 		{
@@ -1421,6 +1423,9 @@ namespace Comfy::Studio::Editor
 
 		if (Input::IsAnyPressed(GlobalUserData.Input.TargetTimeline_ToggleTargetHolds, false))
 			ToggleSelectedTargetsHolds(undoManager, *workingChart);
+		// Add Chance Shortcut keys func
+		if (Input::IsAnyPressed(GlobalUserData.Input.TargetTimeline_ToggleTargetChance, false))
+			ToggleSelectedTargetsChance(undoManager, *workingChart);
 	}
 
 	namespace
@@ -1842,8 +1847,14 @@ namespace Comfy::Studio::Editor
 			auto isTargetSelectedAndHoldToggable = [](const TimelineTarget& t) -> bool { return t.IsSelected && !IsSlideButtonType(t.Type); };
 			const bool anyHoldToggableTargetSelected = (selectionCount > 0) && std::any_of(workingChart->Targets.begin(), workingChart->Targets.end(), isTargetSelectedAndHoldToggable);
 
+			auto isTargetSelectedAndChanceToggable = [](const TimelineTarget& t) -> bool { return t.IsSelected && !t.Flags.IsChain; };
+			const bool anyChanceToggableTargetSelected = (selectionCount > 0) && std::any_of(workingChart->Targets.begin(), workingChart->Targets.end(), isTargetSelectedAndChanceToggable);
+
 			if (Gui::MenuItem("Toggle Target Holds", Input::ToString(GlobalUserData.Input.TargetTimeline_ToggleTargetHolds).data(), nullptr, anyHoldToggableTargetSelected))
 				ToggleSelectedTargetsHolds(undoManager, *workingChart);
+			// Add Toggle Chance option in menu
+			if (Gui::MenuItem("Toggle Target Chance", Input::ToString(GlobalUserData.Input.TargetTimeline_ToggleTargetChance).data(), nullptr, anyChanceToggableTargetSelected))
+				ToggleSelectedTargetsChance(undoManager, *workingChart);
 
 			if (Gui::BeginMenu("Modify Targets", (selectionCount > 0)))
 			{
@@ -2025,7 +2036,7 @@ namespace Comfy::Studio::Editor
 
 		for (const auto& target : workingChart->Targets)
 		{
-			if (!target.IsSelected || IsSlideButtonType(target.Type))
+			if (!target.IsSelected || IsSlideButtonType(target.Type) || target.Flags.IsChance)
 				continue;
 
 			auto& data = commandData.emplace_back();
@@ -2055,6 +2066,53 @@ namespace Comfy::Studio::Editor
 			}
 
 			undoManager.Execute<ToggleTargetListIsHold>(*workingChart, std::move(commandData));
+		}
+	}
+
+	void TargetTimeline::ToggleSelectedTargetsChance(Undo::UndoManager& undoManager, Chart& chart)
+	{
+		const size_t selectedTargetCount = CountSelectedTargets();
+		if (selectedTargetCount < 1)
+			return;
+
+		const auto cursorTick = GetCursorTick();
+		bool hasAnyButtonSoundBeenPlayed = false;
+
+		std::vector<ToggleTargetListIsChance::Data> commandData;
+		commandData.reserve(selectedTargetCount);
+
+		for (const auto& target : workingChart->Targets)
+		{
+			if (!target.IsSelected || target.Flags.IsChain || target.Flags.IsHold)
+				continue;
+
+			auto& data = commandData.emplace_back();
+			data.ID = target.ID;
+			data.NewValue = !target.Flags.IsChance;
+
+			if (target.Tick == cursorTick && target.Flags.IsChance != data.NewValue)
+			{
+				PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
+				hasAnyButtonSoundBeenPlayed = true;
+			}
+		}
+
+		if (!commandData.empty())
+		{
+			if (!hasAnyButtonSoundBeenPlayed)
+			{
+				const auto& frontTarget = chart.Targets[chart.Targets.FindIndex(commandData.front().ID)];
+				for (const auto& data : commandData)
+				{
+					const auto& target = chart.Targets[chart.Targets.FindIndex(data.ID)];
+					if (target.Tick != frontTarget.Tick)
+						break;
+
+					PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
+				}
+			}
+
+			undoManager.Execute<ToggleTargetListIsChance>(*workingChart, std::move(commandData));
 		}
 	}
 

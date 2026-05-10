@@ -17,6 +17,7 @@
 #include "Render/D3D11/D3D11Texture.h"
 
 #include "ImGui/Gui.h"
+#include <algorithm>
 
 namespace Comfy::Render
 {

@@ -15,6 +15,7 @@ namespace Comfy::Studio::Editor
 	private:
 		const Graphics::Spr* GetButtonSpriteForTarget(const TimelineTarget& target) const;
 		const Graphics::Spr* GetHoldTextSprite(const bool isSync) const;
+		const Graphics::Spr* GetChanceButtonSpriteForTarget(const TimelineTarget& target) const;
 
 	private:
 		static constexpr f32 buttonIconWidth = 52;
@@ -29,7 +30,8 @@ namespace Comfy::Studio::Editor
 				ButtonIcons,
 				ButtonIconsSync,
 				ButtonIconsFrag,
-				ButtonIconsFragSync;
+				ButtonIconsFragSync,
+				ButtonIconsChance;
 
 			const Graphics::Spr
 				*HoldText,
