@@ -264,8 +264,8 @@ namespace Comfy::Studio::Editor
 			return IO::StreamResult::BadFormat;
 
 		//if ((header.MajorVersion > Version::CurrentMajor)
-		static bool isF2xFile = static_cast<u16>(header.MajorVersion) == 2;
-		if ((header.MajorVersion > Version::CurrentMajor) || isF2xFile)
+		bool isF2xFile = static_cast<u16>(header.MajorVersion) == 2;
+		if ((header.MajorVersion > Version::CurrentMajor) && !isF2xFile)
 			return IO::StreamResult::BadFormat;
 
 		if (header.Endianness != Endianness::Little)
