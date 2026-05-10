@@ -15,6 +15,7 @@ namespace Comfy::Studio::Editor
 		BeatTick TargetTick;
 		BeatTick ButtonTick;
 		TimeSpan FlyingTime;
+		TimeSpan RealBPM;
 	};
 
 	struct Tempo

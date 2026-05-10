@@ -24,12 +24,12 @@ namespace Comfy::Studio::Editor
 		sprites.ButtonIcons[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R");
 		sprites.ButtonIcons[static_cast<size_t>(ButtonType::Star)] = findSprite("TIMELINE_STAR");
 
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Square)] = findSprite("TIMELINE_SQUARE");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Cross)] = findSprite("TIMELINE_CROSS");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Circle)] = findSprite("TIMELINE_CIRCLE");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideL)] = findSprite("TIMELINE_SLIDE_L");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE_CH");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Square)] = findSprite("TIMELINE_SQUARE_CH");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Cross)] = findSprite("TIMELINE_CROSS_CH");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Circle)] = findSprite("TIMELINE_CIRCLE_CH");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideL)] = findSprite("TIMELINE_SLIDE_L_CH");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R_CH");
 		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Star)] = findSprite("TIMELINE_STAR_CH");
 
 		sprites.ButtonIconsSync[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE_SYNC");
@@ -61,6 +61,7 @@ namespace Comfy::Studio::Editor
 		sprites.HoldTextSync = findSprite("TIMELINE_HOLD_TEXT_SYNC");
 		sprites.TargetLine = findSprite("TARGET_LINE");
 		sprites.TargetLineYellow = findSprite("TARGET_LINE_YELLOW");
+
 	}
 
 	void TimelineRenderHelper::DrawButtonIcon(ImDrawList* drawList, const TimelineTarget& target, vec2 position, f32 scale, f32 transparency) const
@@ -76,12 +77,27 @@ namespace Comfy::Studio::Editor
 		const auto topLeft = position - (radius * 0.5f);
 		const auto bottomRight = position + (radius * 0.5f);
 
+		// Let Target Chance looks better
+		const auto chancetopLeft = topLeft - 2.0f;
+		const auto chancebottomRight = bottomRight + 2.0f;
+
 		const auto color = IM_COL32(0xFF, 0xFF, 0xFF, 0xFF * transparency);
 
-		if (const auto buttonSpr = GetButtonSpriteForTarget(target); buttonSpr != nullptr)
-			Gui::AddSprite(drawList, *editorSprites, *buttonSpr, topLeft, bottomRight, color);
-		else
-			drawList->AddRect(position - vec2(radius * 0.25f), position + vec2(radius * 0.25f), color);
+		if (target.Flags.IsChance)
+		{
+			if (const auto chancebuttonSpr = GetChanceButtonSpriteForTarget(target); chancebuttonSpr != nullptr)
+				Gui::AddSprite(drawList, *editorSprites, *chancebuttonSpr, chancetopLeft, chancebottomRight, color);
+			else
+				drawList->AddText(Gui::GetFont(), 12.0f, position + vec2(-18.0f, 0.0f), color, "CHANCE");
+		}
+		else 
+		{
+			if (const auto buttonSpr = GetButtonSpriteForTarget(target); buttonSpr != nullptr)
+
+				Gui::AddSprite(drawList, *editorSprites, *buttonSpr, topLeft, bottomRight, color);
+			else
+				drawList->AddRect(position - vec2(radius * 0.25f), position + vec2(radius * 0.25f), color);
+		}
 
 		if (target.Flags.IsHold)
 		{
@@ -190,5 +206,13 @@ namespace Comfy::Studio::Editor
 	const Graphics::Spr* TimelineRenderHelper::GetHoldTextSprite(const bool isSync) const
 	{
 		return isSync ? sprites.HoldTextSync : sprites.HoldText;
+	}
+
+	const Graphics::Spr* TimelineRenderHelper::GetChanceButtonSpriteForTarget(const TimelineTarget& target) const
+	{
+		const auto typeIndex = static_cast<u8>(target.Type);
+		const auto& typesArray = sprites.ButtonIconsChance;
+
+		return IndexOr(typeIndex, typesArray, nullptr);
 	}
 }

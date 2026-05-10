@@ -756,7 +756,9 @@ namespace Comfy::Studio::Editor
 		const vec2 selectionCenter = std::accumulate(chart.Targets.begin(), chart.Targets.end(), vec2(0.0f),
 			[](vec2 p, auto& t) { return t.IsSelected ? p + Rules::TryGetProperties(t).Position : p; }) / static_cast<f32>(selectionCount);
 
-		const vec2 flipCenter = isLocal ? selectionCenter : Rules::PlacementAreaCenter;
+		// Let flip base for grid Center vec2(960,528)
+		const vec2 gridCenter = Rules::PlacementAreaCenter - vec2(0, 12);
+		const vec2 flipCenter = isLocal ? selectionCenter : gridCenter;
 		const vec2 componentFlipMask = isHorizontal ? vec2(-1.0f, +1.0f) : vec2(+1.0f, -1.0f);
 
 		std::vector<ChangeTargetListProperties::Data> targetData;

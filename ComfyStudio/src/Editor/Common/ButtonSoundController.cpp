@@ -52,6 +52,11 @@ namespace Comfy::Studio::Editor
 		PlayButtonSoundType(ButtonSoundType::Star, {}, startTime, externalClock);
 	}
 
+	void ButtonSoundController::PlayChanceSound(TimeSpan startTime, std::optional<TimeSpan> externalClock)
+	{
+		PlayButtonSoundType(ButtonSoundType::Chance, {}, startTime, externalClock);
+	}
+
 	void ButtonSoundController::PlayChainSoundStart(ChainSoundSlot slot, TimeSpan startTime, std::optional<TimeSpan> externalClock)
 	{
 		PlayButtonSoundType(ButtonSoundType::ChainSlideFirst, slot, startTime, externalClock);
@@ -220,7 +225,7 @@ namespace Comfy::Studio::Editor
 		soundTimings[typeIndex].Update(externalClock);
 
 		Audio::Voice* voice = nullptr;
-		if (type == ButtonSoundType::Button || type == ButtonSoundType::Slide || type == ButtonSoundType::Star)
+		if (type == ButtonSoundType::Button || type == ButtonSoundType::Slide || type == ButtonSoundType::Star || type == ButtonSoundType::Chance)
 		{
 			voice = &buttonVoicePool[buttonPoolRingIndex];
 			buttonPoolRingIndex = IncrementRingIndex<ButtonVoicePoolSize>(buttonPoolRingIndex);
@@ -285,6 +290,8 @@ namespace Comfy::Studio::Editor
 			return soundEffectManager.GetSliderTouchSound(buttonIDs.SliderTouch)[Clamp(sliderTouchIndex, 0, 31)];
 		case ButtonSoundType::Star:
 			return soundEffectManager.GetSlideSound(7);
+		case ButtonSoundType::Chance:
+			return soundEffectManager.Find("pvchange04");
 		}
 
 		return Audio::SourceHandle::Invalid;

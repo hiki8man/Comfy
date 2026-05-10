@@ -200,6 +200,7 @@ namespace Comfy::Studio
 			Input::MultiBinding TargetTimeline_ToggleMetronome;
 			Input::MultiBinding TargetTimeline_ToggleTargetHolds;
 			Input::MultiBinding TargetTimeline_ToggleTargetDoubles;
+			Input::MultiBinding TargetTimeline_ToggleTargetChance;
 			Input::MultiBinding TargetTimeline_PlaceTriangle;
 			Input::MultiBinding TargetTimeline_PlaceSquare;
 			Input::MultiBinding TargetTimeline_PlaceCross;
@@ -246,6 +247,7 @@ namespace Comfy::Studio
 			Input::MultiBinding TargetPreview_PathTool_InterpolateAnglesClockwise;
 			Input::MultiBinding TargetPreview_PathTool_InterpolateAnglesCounterclockwise;
 			Input::MultiBinding TargetPreview_PathTool_InterpolateDistances;
+			Input::MultiBinding TargetPreview_PathTool_InterpolateAmplitude;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsPositive;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsNegative;

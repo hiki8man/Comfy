@@ -312,11 +312,12 @@ namespace Comfy::Studio::Editor
 		const TimeSpan buttonTimeAdjusted = accelerationStructureFlyingTimeFactor.ConvertTickToTimeUsingLookupTableIndexing(buttonTick);
 		const TimeSpan targetTimeAdjusted = accelerationStructureFlyingTimeFactor.ConvertTickToTimeUsingLookupTableIndexing(buttonTick - BeatTick::FromBars(1));
 		const TimeSpan flyingTimeAdjusted = (buttonTimeAdjusted - targetTimeAdjusted);
+		const TimeSpan realBPMTime = accelerationStructure.ConvertTickToTimeUsingLookupTableIndexing(buttonTick) - accelerationStructure.ConvertTickToTimeUsingLookupTableIndexing(buttonTick - BeatTick::FromBars(1));
 
 		const TimeSpan targetTime = (buttonTime - flyingTimeAdjusted);
 		const BeatTick targetTick = accelerationStructure.ConvertTimeToTickUsingLookupTableBinarySearch(targetTime);
 
-		return TimelineTargetSpawnTimes { targetTime, buttonTime, targetTick, buttonTick, flyingTimeAdjusted };
+		return TimelineTargetSpawnTimes { targetTime, buttonTime, targetTick, buttonTick, flyingTimeAdjusted, realBPMTime };
 	}
 
 	void SortedTempoMap::operator=(std::vector<TempoChange>&& newTempoChanges)

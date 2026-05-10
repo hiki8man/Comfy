@@ -64,6 +64,20 @@ namespace Comfy::Studio::Editor
 				if (out.FlyingTimeCommands.empty() || !isFlyingTimeSame(newFlyingTime, out.FlyingTimeCommands.back()))
 					out.FlyingTimeCommands.push_back(newFlyingTime);
 			}
+			else if (const auto* targetCmd = cmd.TryView<PVCommandLayout::TargetF>();
+				targetCmd && script.Version == PVScriptVersion::F)
+			{
+				auto& outTarget = out.TargetCommands.emplace_back();
+				outTarget.TargetTime = currentCmdTime;
+				outTarget.ButtonTime = currentCmdTime + currentFlyingTime;
+				outTarget.Parameters.Type = targetCmd->Type;
+				outTarget.Parameters.PositionX = targetCmd->PositionX;
+				outTarget.Parameters.PositionY = targetCmd->PositionY;
+				outTarget.Parameters.Angle = targetCmd->Angle;
+				outTarget.Parameters.Distance = targetCmd->Distance;
+				outTarget.Parameters.Amplitude = targetCmd->Amplitude;
+				outTarget.Parameters.Frequency = targetCmd->Frequency;
+			}
 			else if (const auto* targetCmd = cmd.TryView<PVCommandLayout::Target>())
 			{
 				auto& outTarget = out.TargetCommands.emplace_back();
@@ -87,7 +101,10 @@ namespace Comfy::Studio::Editor
 				out.PVEndCommandTime = currentCmdTime;
 			}
 		}
-
+		if (out.PVEndCommandTime == TimeSpan(0.0))
+		{
+			out.PVEndCommandTime = currentCmdTime + currentFlyingTime + currentFlyingTime;
+		}
 		return out;
 	}
 

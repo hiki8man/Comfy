@@ -685,6 +685,8 @@ namespace Comfy::Studio::Editor
 						targetData.ChainStart = onScreenTarget.Flags.IsChainStart;
 						targetData.ChainHit = onScreenTarget.HasBeenChainHit;
 						targetData.Chance = onScreenTarget.Flags.IsChance;
+						targetData.Double = onScreenTarget.Flags.IsDouble;
+						targetData.Long = onScreenTarget.Flags.IsLong;
 						targetData.Position = properties.Position;
 						targetData.Progress = progressUnbound;
 						targetData.Scale = hitMissProgress;
@@ -722,19 +724,35 @@ namespace Comfy::Studio::Editor
 						buttonData.Sync = onScreenTarget.Flags.IsSync;
 						buttonData.Chain = onScreenTarget.Flags.IsChain;
 						buttonData.ChainStart = onScreenTarget.Flags.IsChainStart;
+						buttonData.Double = onScreenTarget.Flags.IsDouble;
+						buttonData.Long = onScreenTarget.Flags.IsLong;
 						buttonData.Shadow = TargetRenderHelper::ButtonShadowType::Black;
 						buttonData.Position = GetButtonPathSinePoint(progressUnbound, properties);
 						buttonData.Progress = progress;
 						buttonData.Scale = hitMissProgress;
 					}
 
-					if (!onScreenTarget.Flags.IsSync && !onScreenTarget.HasBeenHit)
+					if (!onScreenTarget.Flags.IsSync && !onScreenTarget.HasBeenHit && !onScreenTarget.Flags.IsLong)
 					{
 						auto& trailData = context.RenderHelperEx.EmplaceButtonTrail();
 						context.RenderHelperEx.ConstructButtonTrail(trailData, onScreenTarget.Type, progressUnbound, progressUnbound, properties, onScreenPair.FlyingTime);
 						trailData.ProgressMax = std::numeric_limits<f32>::max();
 						trailData.Opacity = hitMissProgress;
 					}
+					/*TODO：长条轨迹
+					* Clove的实现方式与编辑器耦合，需要考虑新的方式实现
+					if (onScreenTarget.IsLongStart())
+					{
+						f32 lengthFractions = workingChart->Targets.GetLengthInTicks(target).BeatsFraction();
+						f32 length = lengthFractions / 4.0f * flyingTime.TotalSeconds();
+
+						auto& trailData = context.RenderHelperEx.EmplaceButtonTrail();
+						context.RenderHelperEx.ConstructButtonTrail(trailData, target.Type, progress, progressUnbound, properties, onScreenPair.FlyingTime);
+						trailData.Long = true;
+						trailData.Length = length * flyingTimeFactor;
+						trailData.FlyingTime = flyingTime.TotalSeconds();
+					}
+					*/
 				}
 
 				if (onScreenPair.TargetCount > 1)
@@ -1090,8 +1108,12 @@ namespace Comfy::Studio::Editor
 						if (target.HasBeenHit || target.Flags.IsChain)
 							continue;
 
-						if (IsSlideButtonType(target.Type))
+						if (target.Flags.IsChance)
+							sharedContext.ButtonSoundController->PlayChanceSound();
+						else if (IsSlideButtonType(target.Type))
 							sharedContext.ButtonSoundController->PlaySlideSound();
+						else if (IsStarButtonType(target.Type))
+							sharedContext.ButtonSoundController->PlayStarSound();
 						else
 							sharedContext.ButtonSoundController->PlayButtonSound();
 
@@ -1246,8 +1268,9 @@ namespace Comfy::Studio::Editor
 					const auto fineThreshold = IsSlideButtonType(nextTargetToHit->Type) ? HitThreshold::FineSlide : HitThreshold::Fine;
 
 					bool successfulHit = false;
-
-					if (matchingType && IsSlideButtonType(nextTargetToHit->Type))
+					if (nextTargetToHit->Flags.IsChance)
+						sharedContext.ButtonSoundController->PlayChanceSound();
+					else if (matchingType && IsSlideButtonType(nextTargetToHit->Type))
 					{
 						sharedContext.ButtonSoundController->PlaySlideSound();
 						lastSlideActionStopwatch.Restart();
@@ -1566,13 +1589,14 @@ namespace Comfy::Studio::Editor
 		Input::FormatBuffer buffer;
 
 		sprintf_s(buffer.data(), buffer.size(),
-			"%c%c%c%c%c%c %s %s",
+			"%c%c%c%c%c%c%c %s %s",
 			(binding.ButtonTypes & ButtonTypeFlags_Triangle) ? '1' : '0',
 			(binding.ButtonTypes & ButtonTypeFlags_Square) ? '1' : '0',
 			(binding.ButtonTypes & ButtonTypeFlags_Cross) ? '1' : '0',
 			(binding.ButtonTypes & ButtonTypeFlags_Circle) ? '1' : '0',
 			(binding.ButtonTypes & ButtonTypeFlags_SlideL) ? '1' : '0',
 			(binding.ButtonTypes & ButtonTypeFlags_SlideR) ? '1' : '0',
+			(binding.ButtonTypes & ButtonTypeFlags_Star) ? '1' : '0',
 			IndexOr(static_cast<u8>(binding.SlidePosition), PlayTestSlidePositionTypeIDStrings, " "),
 			bindingBuffer.data()
 		);

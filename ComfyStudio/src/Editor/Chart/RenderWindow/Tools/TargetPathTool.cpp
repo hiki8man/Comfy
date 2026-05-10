@@ -40,6 +40,9 @@ namespace Comfy::Studio::Editor
 		if (Gui::MenuItem("Interpolate Distances", Input::ToString(GlobalUserData.Input.TargetPreview_PathTool_InterpolateDistances).data(), false, (selectionCount > 0)))
 			InterpolateSelectedTargetDistances(undoManager, chart);
 
+		if (Gui::MenuItem("Interpolate Amplitude", Input::ToString(GlobalUserData.Input.TargetPreview_PathTool_InterpolateAmplitude).data(), false, (selectionCount > 0)))
+			InterpolateSelectedTargetAmplitude(undoManager, chart);
+
 		Gui::Separator();
 
 		if (Gui::BeginMenu("Angle Increment Settings"))
@@ -247,6 +250,8 @@ namespace Comfy::Studio::Editor
 				InterpolateSelectedTargetAngles(undoManager, chart, false);
 			if (Input::IsAnyPressed(GlobalUserData.Input.TargetPreview_PathTool_InterpolateDistances, false))
 				InterpolateSelectedTargetDistances(undoManager, chart);
+			if (Input::IsAnyPressed(GlobalUserData.Input.TargetPreview_PathTool_InterpolateAmplitude, false))
+				InterpolateSelectedTargetAmplitude(undoManager, chart);
 
 			if (Input::IsAnyPressed(GlobalUserData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack, false))
 				ApplySelectedTargetAngleIncrements(undoManager, chart, +1.0f, true);
@@ -424,7 +429,9 @@ namespace Comfy::Studio::Editor
 			return;
 
 		const f32 startAngle = Rules::TryGetProperties(firstFoundTarget).Angle;
-		const f32 endAngle = clockwise ? Rules::TryGetProperties(lastFoundTarget).Angle : Rules::TryGetProperties(lastFoundTarget).Angle - 360.0f;
+		//Fixed calculation when startangle > 90.0 and endangle < -90.0
+		auto originalendAngle = clockwise ? Rules::TryGetProperties(lastFoundTarget).Angle : Rules::TryGetProperties(lastFoundTarget).Angle - 360.0f;
+		const f32 endAngle = (startAngle > 90.0f && originalendAngle < -90.0f) ? originalendAngle + 360.0f : originalendAngle;
 
 		const i32 startTicks = firstFoundTarget.Tick.Ticks();
 		const i32 endTicks = lastFoundTarget.Tick.Ticks();
@@ -496,6 +503,42 @@ namespace Comfy::Studio::Editor
 
 		undoManager.DisallowMergeForLastCommand();
 		undoManager.Execute<InterpolateTargetListDistances>(chart, std::move(targetData));
+	}
+
+	void TargetPathTool::InterpolateSelectedTargetAmplitude(Undo::UndoManager& undoManager, Chart& chart)
+	{
+		const size_t selectionCount = std::count_if(chart.Targets.begin(), chart.Targets.end(), [](auto& t) { return t.IsSelected; });
+		if (selectionCount < 1)
+			return;
+
+		const auto& firstFoundTarget = *std::find_if(chart.Targets.begin(), chart.Targets.end(), [](auto& t) { return t.IsSelected; });
+		const auto& lastFoundTarget = *std::find_if(chart.Targets.rbegin(), chart.Targets.rend(), [](auto& t) { return t.IsSelected; });
+		if (firstFoundTarget.Tick == lastFoundTarget.Tick)
+			return;
+
+		const f32 startAmplitude = Rules::TryGetProperties(firstFoundTarget).Amplitude;
+		const f32 endAmplitude = Rules::TryGetProperties(lastFoundTarget).Amplitude;
+
+		const i32 startTicks = firstFoundTarget.Tick.Ticks();
+		const i32 endTicks = lastFoundTarget.Tick.Ticks();
+		const f32 tickSpanReciprocal = 1.0f / static_cast<f32>(endTicks - startTicks);
+
+		std::vector<InterpolateTargetListAmplitude::Data> targetData;
+		targetData.reserve(selectionCount);
+
+		for (const auto& target : chart.Targets)
+		{
+			if (!target.IsSelected)
+				continue;
+
+			const f32 t = static_cast<f32>(target.Tick.Ticks() - startTicks) * tickSpanReciprocal;
+			auto& data = targetData.emplace_back();
+			data.ID = target.ID;
+			data.NewValue.Amplitude = ((1.0f - t) * startAmplitude) + (t * endAmplitude);
+		}
+
+		undoManager.DisallowMergeForLastCommand();
+		undoManager.Execute<InterpolateTargetListAmplitude>(chart, std::move(targetData));
 	}
 
 	void TargetPathTool::ApplySelectedTargetAngleIncrements(Undo::UndoManager& undoManager, Chart& chart, f32 direction, bool backwards)

@@ -32,7 +32,7 @@ namespace Comfy::Studio::Editor
 
 		ButtonTypeFlags_NormalAll = (ButtonTypeFlags_Triangle | ButtonTypeFlags_Square | ButtonTypeFlags_Cross | ButtonTypeFlags_Circle),
 		ButtonTypeFlags_SlideAll = (ButtonTypeFlags_SlideL | ButtonTypeFlags_SlideR),
-		ButtonTypeFlags_All = (ButtonTypeFlags_NormalAll | ButtonTypeFlags_SlideAll),
+		ButtonTypeFlags_All = (ButtonTypeFlags_NormalAll | ButtonTypeFlags_SlideAll | ButtonTypeFlags_Star),
 	};
 
 	using TargetPropertyType = u8;

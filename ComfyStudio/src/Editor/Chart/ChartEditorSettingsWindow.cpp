@@ -1614,6 +1614,7 @@ namespace Comfy::Studio::Editor
 			{ &userData.Input.TargetTimeline_ToggleMetronome, "Target Timeline - Toggle Metronome" },
 			{ &userData.Input.TargetTimeline_ToggleTargetHolds, "Target Timeline - Toggle Target Holds" },
 			{ &userData.Input.TargetTimeline_ToggleTargetDoubles, "Target Timeline - Toggle Target Doubles" },
+			{ &userData.Input.TargetTimeline_ToggleTargetChance, "Target Timeline - Toggle Target Chance" },
 			{ &userData.Input.TargetTimeline_PlaceTriangle, "Target Timeline - Place Triangle" },
 			{ &userData.Input.TargetTimeline_PlaceSquare, "Target Timeline - Place Square" },
 			{ &userData.Input.TargetTimeline_PlaceCross, "Target Timeline - Place Cross" },
@@ -1659,6 +1660,7 @@ namespace Comfy::Studio::Editor
 			{ &userData.Input.TargetPreview_PathTool_InterpolateAnglesClockwise, "Target Preview - Path Tool - Interpolate Angles Clockwise" },
 			{ &userData.Input.TargetPreview_PathTool_InterpolateAnglesCounterclockwise, "Target Preview - Path Tool - Interpolate Angles" },
 			{ &userData.Input.TargetPreview_PathTool_InterpolateDistances, "Target Preview - Path Tool - Interpolate Distances" },
+			{ &userData.Input.TargetPreview_PathTool_InterpolateAmplitude, "Target Preview - Path Tool - Interpolate Amplitude" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositive, "Target Preview - Path Tool - Apply Angle Increments Positive" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack, "Target Preview - Path Tool - Apply Angle Increments Positive Back" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsNegative, "Target Preview - Path Tool - Apply Angle Increments Negative" },
@@ -1900,7 +1902,8 @@ namespace Comfy::Studio::Editor
 				Gui::SameLine(0.0f, itemInnerSpacingX);
 				Gui::PushItemWidth((availWidthTotal - itemInnerSpacingX - itemInnerSpacingX) / 2.0f);
 
-				static constexpr std::array<const char*, EnumCount<ButtonType>()> buttonNames = { "Triangle", "Square", "Cross", "Circle", "Slide Left", "Slide Right", "Star" };
+				static constexpr std::array<const char*, EnumCount<ButtonType>()> buttonNames = { "Triangle", "Square", "Cross", "Circle", "Slide Left", "Slide Right", "Star",};
+
 
 				char comboPreview[64]; comboPreview[0] = '\0';
 				if (binding.ButtonTypes != ButtonTypeFlags_None)
@@ -1949,7 +1952,7 @@ namespace Comfy::Studio::Editor
 								binding.ButtonTypes = buttonTypeFlags;
 
 							// NOTE: Only allow selecting either a single slide or any number of non slide buttons
-							if (IsSlideButtonType(buttonType))
+							if (IsSlideButtonType(buttonType) || IsStarButtonType(buttonType))
 								binding.ButtonTypes = flagIsSet ? binding.ButtonTypes : buttonTypeFlags;
 							else
 								binding.ButtonTypes &= ButtonTypeFlags_NormalAll;

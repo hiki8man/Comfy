@@ -93,6 +93,7 @@ namespace Comfy::Studio::Editor
 			"dev_rom/sound/slide_windchime.farc",
 			"dev_rom/sound/slide_laser.farc",
 			"dev_rom/sound/se_ft.farc",
+			"dev_rom/sound/pvchange.farc",
 		};
 
 		assert(sfxArchives.empty());

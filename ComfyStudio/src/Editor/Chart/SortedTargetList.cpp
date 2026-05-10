@@ -13,7 +13,7 @@ namespace Comfy::Studio::Editor
 
 			u64 totalWeight = 0;
 			totalWeight |= (static_cast<u64>(tick.Ticks()) << 32);
-			totalWeight |= (static_cast<u64>(type) << 0);
+			totalWeight |= (static_cast<u64>(static_cast<u8>(ButtonType::Count) - static_cast<u8>(type)) << 0);
 			return totalWeight;
 		}
 

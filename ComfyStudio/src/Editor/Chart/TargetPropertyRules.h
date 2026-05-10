@@ -19,9 +19,12 @@ namespace Comfy::Studio::Editor
 		if (static_cast<i32>(frequency) % 2 != 0)
 			frequency *= -1.0f;
 
+		if (distance < 0.0f)
+			frequency *= -1.0f;
+
 		progress = (1.0f - progress);
 
-		const auto sinePoint = vec2(progress * distance, glm::sin(progress * glm::pi<f32>() * frequency) / 12.0f * amplitude);
+		const auto sinePoint = vec2(progress * distance, glm::sin(progress * glm::pi<f32>() * frequency) / 12.5f * amplitude);
 		return rotate(sinePoint, glm::radians(degrees - 90.0f)) + pivot;
 	}
 
@@ -227,9 +230,9 @@ namespace Comfy::Studio::Editor
 				if (flags.SyncPairCount == 3)
 				{
 					if (type == ButtonType::Square && flags.IndexWithinSyncPair == 1)
-						return true;
-					if (type == ButtonType::Cross)
 						return false;
+					if (type == ButtonType::Cross)
+						return true;
 				}
 
 				return false;
@@ -244,7 +247,7 @@ namespace Comfy::Studio::Editor
 					return { Detail::PresetTargetPosition(type, tick, flags), 0.0f, -2.0f, 500.0f, 1200.0f, };
 
 				const bool upperHalfOfPair = IsUpperPartOfSyncPair(type, flags);
-				const auto angle = VerticalSyncPairAngles[static_cast<size_t>(upperHalfOfPair ? AngleCorner::TopRight : AngleCorner::BotRight)];
+				const auto angle = VerticalSyncPairAngles[static_cast<size_t>(!upperHalfOfPair ? AngleCorner::TopRight : AngleCorner::BotRight)];
 				return { Detail::PresetTargetPosition(type, tick, flags), angle, 0.0f, 500.0f, 880.0f, };
 			}
 

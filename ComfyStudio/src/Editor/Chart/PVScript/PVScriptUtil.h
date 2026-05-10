@@ -37,6 +37,13 @@ namespace Comfy::Studio::Editor
 			PVCommandLayout::Target Parameters;
 		};
 
+		struct TargetFCommandData
+		{
+			TimeSpan TargetTime;
+			TimeSpan ButtonTime;
+			PVCommandLayout::TargetF Parameters;
+		};
+
 		struct FlyingTimeCommandData
 		{
 			TimeSpan CommandTime;

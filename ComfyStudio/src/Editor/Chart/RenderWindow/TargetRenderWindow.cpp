@@ -714,7 +714,7 @@ namespace Comfy::Studio::Editor
 
 		for (const auto& target : targets)
 		{
-			auto[targetTime, buttonTime, targetTick, buttonTick, flyingTime] = workingChart->TempoMap.GetTargetSpawnTimes(target);
+			auto[targetTime, buttonTime, targetTick, buttonTick, flyingTime, realbpm] = workingChart->TempoMap.GetTargetSpawnTimes(target);
 			f32 flyingTimeFactor = workingChart->TempoMap.FindFlyingTimeFactorAt(target.Tick);
 
 			// NOTE: To match the behavior during play testing and after exporting.

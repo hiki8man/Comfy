@@ -79,6 +79,23 @@ namespace Comfy::Studio::Editor
 				case PVCommandLayout::TargetType::SquareChance: { outType = ButtonType::Square; outFlags.IsChance = true; } break;
 				case PVCommandLayout::TargetType::SlideLChance: { outType = ButtonType::SlideL; outFlags.IsChance = true; } break;
 				case PVCommandLayout::TargetType::SlideRChance: { outType = ButtonType::SlideR; outFlags.IsChance = true; } break;
+
+				case PVCommandLayout::TargetType::TriangleW: { outType = ButtonType::Triangle; outFlags.IsDouble = true; } break;
+				case PVCommandLayout::TargetType::CircleW: { outType = ButtonType::Circle; outFlags.IsDouble = true; } break;
+				case PVCommandLayout::TargetType::CrossW: { outType = ButtonType::Cross; outFlags.IsDouble = true; } break;
+				case PVCommandLayout::TargetType::SquareW: { outType = ButtonType::Square; outFlags.IsDouble = true; } break;
+
+				case PVCommandLayout::TargetType::TriangleLong: { outType = ButtonType::Triangle; outFlags.IsLong = true; } break;
+				case PVCommandLayout::TargetType::CircleLong: { outType = ButtonType::Circle; outFlags.IsLong = true; } break;
+				case PVCommandLayout::TargetType::CrossLong: { outType = ButtonType::Cross; outFlags.IsLong = true; } break;
+				case PVCommandLayout::TargetType::SquareLong: { outType = ButtonType::Square; outFlags.IsLong = true; } break;
+
+				case PVCommandLayout::TargetType::Star: { outType = ButtonType::Star; } break;
+				case PVCommandLayout::TargetType::StarW: { outType = ButtonType::Star; outFlags.IsDouble = true; } break;
+				case PVCommandLayout::TargetType::ChanceStar: { outType = ButtonType::Star; outFlags.IsChance = true; } break;
+
+				case PVCommandLayout::TargetType::LinkStar: { outType = ButtonType::Star; } break;
+				case PVCommandLayout::TargetType::LinkStarEnd: { outType = ButtonType::Star; } break;
 				}
 
 				outTarget.Properties.Position.x = static_cast<f32>(targetCommand.Parameters.PositionX / PVTargetCommandFixedPointPositionFactor);
@@ -87,14 +104,29 @@ namespace Comfy::Studio::Editor
 				outTarget.Properties.Frequency = static_cast<f32>(targetCommand.Parameters.Frequency);
 				outTarget.Properties.Amplitude = static_cast<f32>(targetCommand.Parameters.Amplitude);
 				outTarget.Properties.Distance = static_cast<f32>(targetCommand.Parameters.Distance / PVTargetCommandFixedPointPositionFactor);
+				
 			}
 
 			outTargetList.Clear();
 			outTargetList = std::move(outTargets);
+			auto StartLongCheck = false;
 			for (auto& outTarget : outTargetList)
 			{
 				if (outTarget.Flags.IsChain && !outTarget.Flags.IsChainStart)
 					outTarget.Properties.Position.x -= Rules::ChainFragmentStartEndOffsetDistance * (outTarget.Type == ButtonType::SlideL ? -1.0f : +1.0f);
+				//Note:目前的实现并没有考虑多压长条，长条头尾相接等情况，需要考虑重写
+				if (outTarget.Flags.IsLong) 
+				{
+					if (StartLongCheck)
+					{
+						outTarget.PreviousID = static_cast<TimelineTargetID>(static_cast<u32>(outTarget.ID) - 1);
+					}
+					else
+					{
+						outTarget.NextID = static_cast<TimelineTargetID>(static_cast<u32>(outTarget.ID) + 1);
+					}
+					StartLongCheck = !StartLongCheck;
+				}
 			}
 		}
 

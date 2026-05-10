@@ -492,7 +492,7 @@ namespace Comfy::Studio::Editor
 			Count
 		};
 
-		static constexpr auto settingsClickBehavior = TargetTimelineInfoColumnClickBehavior::InsertHovered;
+		static constexpr auto settingsClickBehavior = TargetTimelineInfoColumnClickBehavior::None;
 
 		if (settingsClickBehavior != TargetTimelineInfoColumnClickBehavior::None)
 		{
@@ -1674,6 +1674,9 @@ namespace Comfy::Studio::Editor
 
 		if (Input::IsAnyPressed(GlobalUserData.Input.TargetTimeline_ToggleTargetDoubles, false))
 			ToggleSelectedTargetsDoubles(undoManager, *workingChart);
+
+		if (Input::IsAnyPressed(GlobalUserData.Input.TargetTimeline_ToggleTargetChance, false))
+			ToggleSelectedTargetsChance(undoManager, *workingChart);
 	}
 
 	namespace
@@ -2261,6 +2264,18 @@ namespace Comfy::Studio::Editor
 			if (Gui::MenuItem("Toggle Target Holds", Input::ToString(GlobalUserData.Input.TargetTimeline_ToggleTargetHolds).data(), nullptr, anyHoldToggableTargetSelected))
 				ToggleSelectedTargetsHolds(undoManager, *workingChart);
 
+			auto isTargetSelectedAndChanceToggable = [](const TimelineTarget& t) -> bool { return t.IsSelected && !t.Flags.IsChain; };
+			const bool anyChanceToggableTargetSelected = (selectionCount > 0) && std::any_of(workingChart->Targets.begin(), workingChart->Targets.end(), isTargetSelectedAndChanceToggable);
+
+			if (Gui::MenuItem("Toggle Target Chance", Input::ToString(GlobalUserData.Input.TargetTimeline_ToggleTargetChance).data(), nullptr, anyChanceToggableTargetSelected))
+				ToggleSelectedTargetsChance(undoManager, *workingChart);
+
+			auto isTargetSelectedAndDoubleToggable = [](const TimelineTarget& t) -> bool { return t.IsSelected && !IsSlideButtonType(t.Type); };
+			const bool anyDoubleToggableTargetSelected = (selectionCount > 0) && std::any_of(workingChart->Targets.begin(), workingChart->Targets.end(), isTargetSelectedAndDoubleToggable);
+
+			if (Gui::MenuItem("Toggle Target Double", Input::ToString(GlobalUserData.Input.TargetTimeline_ToggleTargetDoubles).data(), nullptr, anyChanceToggableTargetSelected))
+				ToggleSelectedTargetsDoubles(undoManager, *workingChart);
+
 			auto isSelectionConvertableToLong = [&]()
 			{
 				if (selectionCount % 2 != 0)
@@ -2587,7 +2602,7 @@ namespace Comfy::Studio::Editor
 		for (const auto& target : workingChart->Targets)
 		{
 			// TODO: Disable IsDouble and IsLong rather than just not doing anything
-			if (!target.IsSelected || !IsNormalButtonType(target.Type) || target.Flags.IsDouble || target.Flags.IsLong)
+			if (!target.IsSelected || !IsNormalButtonType(target.Type) || target.Flags.IsDouble || target.Flags.IsLong || target.Flags.IsChance)
 				continue;
 
 			auto& data = commandData.emplace_back();
@@ -2639,6 +2654,54 @@ namespace Comfy::Studio::Editor
 				target.Flags.IsChance = false;
 				target.Flags.IsHold = false;
 			}
+		}
+	}
+
+
+	void TargetTimeline::ToggleSelectedTargetsChance(Undo::UndoManager& undoManager, Chart& chart)
+	{
+		const size_t selectedTargetCount = CountSelectedTargets();
+		if (selectedTargetCount < 1)
+			return;
+
+		const auto cursorTick = GetCursorTick();
+		bool hasAnyButtonSoundBeenPlayed = false;
+
+		std::vector<ToggleTargetListIsChance::Data> commandData;
+		commandData.reserve(selectedTargetCount);
+
+		for (const auto& target : workingChart->Targets)
+		{
+			if (!target.IsSelected || target.Flags.IsChain || target.Flags.IsHold || target.Flags.IsDouble || target.Flags.IsLong)
+				continue;
+
+			auto& data = commandData.emplace_back();
+			data.ID = target.ID;
+			data.NewValue = !target.Flags.IsChance;
+
+			if (target.Tick == cursorTick && target.Flags.IsChance != data.NewValue)
+			{
+				PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
+				hasAnyButtonSoundBeenPlayed = true;
+			}
+		}
+
+		if (!commandData.empty())
+		{
+			if (!hasAnyButtonSoundBeenPlayed)
+			{
+				const auto& frontTarget = chart.Targets[chart.Targets.FindIndex(commandData.front().ID)];
+				for (const auto& data : commandData)
+				{
+					const auto& target = chart.Targets[chart.Targets.FindIndex(data.ID)];
+					if (target.Tick != frontTarget.Tick)
+						break;
+
+					PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
+				}
+			}
+
+			undoManager.Execute<ToggleTargetListIsChance>(*workingChart, std::move(commandData));
 		}
 	}
 
