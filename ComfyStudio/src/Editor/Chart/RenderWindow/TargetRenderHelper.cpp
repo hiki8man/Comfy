@@ -1136,7 +1136,7 @@ namespace Comfy::Studio::Editor
 				if (data.Long)
 					return layers.ButtonsLong;
 
-				if (data.Chance)
+				if (data.Chance && data.Type == ButtonType::Star)
 					return layers.ButtonsChance;
 
 				if (data.Chain && !data.ChainStart)
