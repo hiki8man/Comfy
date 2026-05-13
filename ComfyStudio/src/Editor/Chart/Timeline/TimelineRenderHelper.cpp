@@ -24,12 +24,14 @@ namespace Comfy::Studio::Editor
 		sprites.ButtonIcons[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R");
 		sprites.ButtonIcons[static_cast<size_t>(ButtonType::Star)] = findSprite("TIMELINE_STAR");
 
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE_CH");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Square)] = findSprite("TIMELINE_SQUARE_CH");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Cross)] = findSprite("TIMELINE_CROSS_CH");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Circle)] = findSprite("TIMELINE_CIRCLE_CH");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideL)] = findSprite("TIMELINE_SLIDE_L_CH");
-		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R_CH");
+		// normal chance note logic
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE_CHANCE");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Square)] = findSprite("TIMELINE_SQUARE_CHANCE");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Cross)] = findSprite("TIMELINE_CROSS_CHANCE");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Circle)] = findSprite("TIMELINE_CIRCLE_CHANCE");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideL)] = findSprite("TIMELINE_SLIDE_L_CHANCE");
+		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::SlideR)] = findSprite("TIMELINE_SLIDE_R_CHANCE");
+		// clover chance star logic
 		sprites.ButtonIconsChance[static_cast<size_t>(ButtonType::Star)] = findSprite("TIMELINE_STAR_CH");
 
 		sprites.ButtonIconsSync[static_cast<size_t>(ButtonType::Triangle)] = findSprite("TIMELINE_TRIANGLE_SYNC");
@@ -90,14 +92,13 @@ namespace Comfy::Studio::Editor
 			else
 				drawList->AddText(Gui::GetFont(), 12.0f, position + vec2(-18.0f, 0.0f), color, "CHANCE");
 		}
-		else 
-		{
-			if (const auto buttonSpr = GetButtonSpriteForTarget(target); buttonSpr != nullptr)
 
-				Gui::AddSprite(drawList, *editorSprites, *buttonSpr, topLeft, bottomRight, color);
-			else
-				drawList->AddRect(position - vec2(radius * 0.25f), position + vec2(radius * 0.25f), color);
-		}
+		if (const auto buttonSpr = GetButtonSpriteForTarget(target); buttonSpr != nullptr)
+
+			Gui::AddSprite(drawList, *editorSprites, *buttonSpr, topLeft, bottomRight, color);
+		else
+			drawList->AddRect(position - vec2(radius * 0.25f), position + vec2(radius * 0.25f), color);
+
 
 		if (target.Flags.IsHold)
 		{
@@ -196,7 +197,7 @@ namespace Comfy::Studio::Editor
 		const auto& typesArray =
 			isLong ? sprites.ButtonIconsLong :
 			isDouble ? sprites.ButtonIconsDouble :
-			isChance ? sprites.ButtonIconsChance :
+			(isChance && target.Type == ButtonType::Star) ? sprites.ButtonIconsChance :
 			isFrag ? isSync ? sprites.ButtonIconsFragSync : sprites.ButtonIconsFrag :
 			isSync ? sprites.ButtonIconsSync : sprites.ButtonIcons;
 
