@@ -1100,6 +1100,9 @@ namespace Comfy::Studio::Editor
 							sharedContext.ButtonSoundController->PlaySlideSound();
 						else if (IsStarButtonType(target.Type))
 							sharedContext.ButtonSoundController->PlayStarSound();
+						// 添加Double
+						else if (target.Flags.IsDouble)
+							sharedContext.ButtonSoundController->PlayNormalWSound();
 						else
 							sharedContext.ButtonSoundController->PlayButtonSound();
 

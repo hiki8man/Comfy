@@ -18,6 +18,9 @@ namespace Comfy::Studio::Editor
 		NormalW,
 		Star,
 		StarW,
+		LongFirst,
+		LongSub,
+		LongEnd,
 		Chance,
 		Count,
 	};
@@ -35,6 +38,8 @@ namespace Comfy::Studio::Editor
 		static constexpr size_t ButtonVoicePoolSize = 24;
 		static constexpr size_t SliderTouchVoicePoolSize = 24;
 		static constexpr size_t PerSlotChainVoicePoolSize = 12;
+		// 长条音线程池尺寸
+		static constexpr size_t PreSlotSustainVoicePoolSize = 12;
 
 	public:
 		ButtonSoundController(SoundEffectManager& soundEffectManager);
@@ -47,16 +52,24 @@ namespace Comfy::Studio::Editor
 		void PlayButtonSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlaySlideSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlayStarSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
+		void PlayNormalWSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
+
+		// 长条音播放接口
+		void PlayLongSoundStart(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
+		void PlayLongSoundEnd(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
+
 		void PlayChanceSound(TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 
 		void PlayChainSoundStart(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlayChainSoundSuccess(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void PlayChainSoundFailure(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero(), std::optional<TimeSpan> externalClock = {});
 		void FadeOutLastChainSound(ChainSoundSlot slot, TimeSpan startTime = TimeSpan::Zero());
+		void FadeOutSustainSound(TimeSpan startTime = TimeSpan::Zero());
 
 		void PlaySliderTouch(i32 sliderTouchIndex, f32 baseVolume = 1.0f);
 
 		void PauseAllChainSounds();
+		void PauseAllSustainSounds();
 		void PauseAllNegativeVoices();
 
 		f32 GetMasterVolume() const;
@@ -91,7 +104,10 @@ namespace Comfy::Studio::Editor
 
 		const TimeSpan chainFadeOutDuration = TimeSpan::FromMilliseconds(200.0);
 
-		size_t buttonPoolRingIndex = 0, sliderTouchPoolRingIndex = 0;
+		size_t buttonPoolRingIndex = 0, sliderTouchPoolRingIndex = 0 ;
+		// 添加长条音线程池初始index
+		size_t sustainStartPoolRingIndex = 0, sustainEndPoolRingIndex = 0, preSlotSustainPoolRingIndex = 0;
+
 		std::array<size_t, EnumCount<ChainSoundSlot>()> chainStartPoolRingIndices = {};
 		std::array<size_t, EnumCount<ChainSoundSlot>()> chainEndPoolRingIndices = {};
 
@@ -99,5 +115,10 @@ namespace Comfy::Studio::Editor
 		std::array<Audio::Voice, SliderTouchVoicePoolSize> sliderTouchVoicePool;
 		std::array<std::array<Audio::Voice, PerSlotChainVoicePoolSize>, EnumCount<ChainSoundSlot>()> chainStartVoicePools, chainEndVoicePools;
 		std::array<Audio::Voice, EnumCount<ChainSoundSlot>()> perSlotChainSubVoices;
+
+		// 定义长条音线程池
+		std::array<Audio::Voice, PreSlotSustainVoicePoolSize> sustainStartVoicePool, sustainEndVoicePool;
+		// 长条处于按住状态
+		Audio::Voice preSlotSustainVoices;
 	};
 }
