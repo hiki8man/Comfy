@@ -231,6 +231,7 @@ namespace Comfy::Studio::Editor
 			voice = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
 		}
 
+		
 		for (size_t i = 0; i < PreSlotSustainVoicePoolSize; i++)
 		{
 			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainStartVoicePool[%02zu]", i));
@@ -244,6 +245,7 @@ namespace Comfy::Studio::Editor
 			sustainEndVoicePool[i].SetPauseOnEnd(true);
 
 		}
+
 		for (size_t slotIndex = 0; slotIndex < 1; slotIndex++)
 		{
 			auto& voice = preSlotSustainVoices;
@@ -251,7 +253,7 @@ namespace Comfy::Studio::Editor
 			voice = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
 			voice.SetPauseOnEnd(true);
 		}
-
+		
 
 	}
 
