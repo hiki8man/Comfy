@@ -3118,7 +3118,7 @@ namespace Comfy::Studio::Editor
 
 	void TargetTimeline::PlaySingleTargetButtonSoundAndAnimation(const TimelineTarget& target)
 	{
-		PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Flags, target.Tick);
+		PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
 	}
 
 
@@ -3133,16 +3133,7 @@ namespace Comfy::Studio::Editor
 		buttonAnimations[buttonIndex].ElapsedTime = TimeSpan::Zero();
 	}
 	
-	void TargetTimeline::PlaySingleTargetButtonSoundAndAnimation(ButtonType buttonType, TargetFlags buttonflags, BeatTick buttonTick)
-	{
-		// NOTE: During playback the sound will be handled automatically already
-		if (!GetIsPlayback()){
-			buttonflags.IsDouble ? buttonSoundController.PlayNormalWSound() : PlayTargetButtonTypeSound(buttonType);
-		}
-		const auto buttonIndex = static_cast<size_t>(buttonType);
-		buttonAnimations[buttonIndex].Tick = buttonTick;
-		buttonAnimations[buttonIndex].ElapsedTime = TimeSpan::Zero();
-	}
+
 
 	TimeSpan TargetTimeline::GetCursorTime() const
 	{
