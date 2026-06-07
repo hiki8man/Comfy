@@ -73,8 +73,12 @@ namespace Comfy::Studio::Editor
 		return (type == ButtonType::SlideL || type == ButtonType::SlideR);
 	}
 
-	constexpr bool IsStarButtonType(ButtonType type) { return type == ButtonType::Star; }
+	constexpr bool IsStarButtonType(ButtonType type) 
+	{ 
+		return type == ButtonType::Star;
+	}
 
+																			
 	constexpr ButtonType FlipSlideButtonType(ButtonType type)
 	{
 		switch (type)

@@ -227,6 +227,8 @@ namespace Comfy::Studio::Editor
 
 		void PlaySingleTargetButtonSoundAndAnimation(const TimelineTarget& target);
 		void PlaySingleTargetButtonSoundAndAnimation(ButtonType buttonType, BeatTick buttonTick);
+		// 修改程序支持Double
+		void PlaySingleTargetButtonSoundAndAnimation(ButtonType buttonType, TargetFlags flags, BeatTick buttonTick);
 
 		void PlaybackStateChangeSyncButtonSoundCursorTime(TimeSpan newCursorTime);
 
