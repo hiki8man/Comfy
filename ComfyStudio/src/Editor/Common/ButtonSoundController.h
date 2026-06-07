@@ -39,7 +39,7 @@ namespace Comfy::Studio::Editor
 		static constexpr size_t SliderTouchVoicePoolSize = 24;
 		static constexpr size_t PerSlotChainVoicePoolSize = 12;
 		// 长条音线程池尺寸
-		static constexpr size_t PreSlotSustainVoicePoolSize = 12;
+		static constexpr size_t PreSlotSustainVoicePoolSize = 24;
 
 	public:
 		ButtonSoundController(SoundEffectManager& soundEffectManager);
