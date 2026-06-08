@@ -109,19 +109,19 @@ namespace Comfy::Studio::Editor
 
 
 	}
-	void ButtonSoundController::FadeOutSustainSound(TimeSpan startTime)
+	void ButtonSoundController::FadeOutLastLongSound(TimeSpan startTime)
 	{
-		auto& voice = sustainStartVoicePool[DecrementRingIndex<PreSlotSustainVoicePoolSize>(sustainStartPoolRingIndex)];
+		auto& voice = longStartVoicePool[DecrementRingIndex<PreSlotLongVoicePoolSize>(longStartPoolRingIndex)];
 		const auto voicePosition = (voice.GetPosition() - startTime);
 		voice.SetVolumeMap(voicePosition, voicePosition + chainFadeOutDuration, 1.0f, 0.0f);
-		if (preSlotSustainVoices.GetPosition() < TimeSpan::Zero())
+		if (preSlotLongVoices.GetPosition() < TimeSpan::Zero())
 		{
-			preSlotSustainVoices.SetIsPlaying(false);
+			preSlotLongVoices.SetIsPlaying(false);
 		}
 		else
 		{
-			preSlotSustainVoices.SetIsLooping(false);
-			preSlotSustainVoices.SetPauseOnEnd(true);
+			preSlotLongVoices.SetIsLooping(false);
+			preSlotLongVoices.SetPauseOnEnd(true);
 		}
 	}
 
@@ -148,13 +148,13 @@ namespace Comfy::Studio::Editor
 		for (auto& voice : perSlotChainSubVoices)
 			voice.SetIsPlaying(false);
 	}
-	void ButtonSoundController::PauseAllSustainSounds()
+	void ButtonSoundController::PauseAllLongSounds()
 	{
-		for (auto& voice : sustainStartVoicePool)
+		for (auto& voice : longStartVoicePool)
 		{
 			voice.SetIsPlaying(false);
 		}
-		preSlotSustainVoices.SetIsPlaying(false);
+		preSlotLongVoices.SetIsPlaying(false);
 	}
 
 	void ButtonSoundController::PauseAllNegativeVoices()
@@ -232,23 +232,23 @@ namespace Comfy::Studio::Editor
 		}
 
 		
-		for (size_t i = 0; i < PreSlotSustainVoicePoolSize; i++)
+		for (size_t i = 0; i < PreSlotLongVoicePoolSize; i++)
 		{
-			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainStartVoicePool[%02zu]", i));
-			sustainStartVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
-			sustainStartVoicePool[i].SetPauseOnEnd(true);
+			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound longStartVoicePool[%02zu]", i));
+			longStartVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
+			longStartVoicePool[i].SetPauseOnEnd(true);
 		}
-		for (size_t i = 0; i < PreSlotSustainVoicePoolSize; i++)
+		for (size_t i = 0; i < PreSlotLongVoicePoolSize; i++)
 		{
-			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainEndVoicePool[%02zu]", i));
-			sustainEndVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
-			sustainEndVoicePool[i].SetPauseOnEnd(true);
+			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound longEndVoicePool[%02zu]", i));
+			longEndVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
+			longEndVoicePool[i].SetPauseOnEnd(true);
 
 		}
 
 		for (size_t slotIndex = 0; slotIndex < 1; slotIndex++)
 		{
-			auto& voice = preSlotSustainVoices;
+			auto& voice = preSlotLongVoices;
 			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainSubVoice"));
 			voice = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
 			voice.SetPauseOnEnd(true);
@@ -283,13 +283,13 @@ namespace Comfy::Studio::Editor
 			audioEngine.RemoveVoice(voice);
 
 		// 清除长条音
-		for (auto& voice : sustainStartVoicePool)
+		for (auto& voice : longStartVoicePool)
 			audioEngine.RemoveVoice(voice);
 
-		for (auto& voice : sustainEndVoicePool)
+		for (auto& voice : longEndVoicePool)
 			audioEngine.RemoveVoice(voice);
 
-		audioEngine.RemoveVoice(preSlotSustainVoices);
+		audioEngine.RemoveVoice(preSlotLongVoices);
 	}
 
 	void ButtonSoundController::PlayButtonSoundType(ButtonSoundType type, ChainSoundSlot slot, TimeSpan startTime, std::optional<TimeSpan> externalClock)
@@ -320,15 +320,15 @@ namespace Comfy::Studio::Editor
 		// 初始化长条音线程池
 		else if (type == ButtonSoundType::LongFirst)
 		{
-			voice = &sustainStartVoicePool[sustainStartPoolRingIndex];
-			sustainStartPoolRingIndex = IncrementRingIndex<PreSlotSustainVoicePoolSize>(sustainStartPoolRingIndex);
+			voice = &longStartVoicePool[longStartPoolRingIndex];
+			longStartPoolRingIndex = IncrementRingIndex<PreSlotLongVoicePoolSize>(longStartPoolRingIndex);
 
 			voice->ResetVolumeMap();
 		}
 		else if (type == ButtonSoundType::LongEnd)
 		{
-			voice = &sustainEndVoicePool[sustainEndPoolRingIndex];
-			sustainEndPoolRingIndex = IncrementRingIndex<PreSlotSustainVoicePoolSize>(sustainEndPoolRingIndex);
+			voice = &longEndVoicePool[longEndPoolRingIndex];
+			longEndPoolRingIndex = IncrementRingIndex<PreSlotLongVoicePoolSize>(longEndPoolRingIndex);
 
 		}
 		else
@@ -357,7 +357,7 @@ namespace Comfy::Studio::Editor
 		else if(type == ButtonSoundType::LongFirst)
 		{
 			// 现阶段使用的是自制的音效文件，后续需要修复
-			auto& subVoice = preSlotSustainVoices;
+			auto& subVoice = preSlotLongVoices;
 			subVoice.SetSource(GetSource(ButtonSoundType::LongSub));
 			subVoice.SetVolume(masterVolume);
 			subVoice.SetPosition(startTime - voice->GetDuration());

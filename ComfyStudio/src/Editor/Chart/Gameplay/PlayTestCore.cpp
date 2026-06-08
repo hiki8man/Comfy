@@ -26,7 +26,7 @@ namespace Comfy::Studio::Editor
 			bool IsLinkEnd;
 
 			// 添加长条持续时间
-			TimeSpan LengthTime;
+			f32 LengthTime;
 
 			TimeSpan RemainingTimeOnHit;
 			HitEvaluation HitEvaluation;
@@ -227,12 +227,12 @@ namespace Comfy::Studio::Editor
 
 
 					// [NOTE] 这里的LengthTime只记录了Tick，后面初始化spawnTimes时会重新计算
-					newTarget.LengthTime = TimeSpan::Zero();
+					newTarget.LengthTime = 0.0f;
 					if (newTarget.IsLongStart)
 					{
 						f32 lengthInTicks = chart.Targets.GetLengthInTicks(sourceTarget).BeatsFraction() / 4.0f;
 						if (lengthInTicks > 0.0f)
-							newTarget.LengthTime = TimeSpan::FromSeconds(lengthInTicks);
+							newTarget.LengthTime = lengthInTicks;
 					}
 		
 				}
@@ -773,6 +773,16 @@ namespace Comfy::Studio::Editor
 						context.RenderHelperEx.ConstructButtonTrail(trailData, onScreenTarget.Type, progressUnbound, progressUnbound, properties, onScreenPair.FlyingTime);
 						trailData.ProgressMax = std::numeric_limits<f32>::max();
 						trailData.Opacity = hitMissProgress;
+					}
+					
+					if (onScreenTarget.IsLongStart &&!onScreenTarget.HasTimedOut)
+					{
+						// [NOTE] 新加的长条尾绘制逻辑，问题很多需要修正
+						auto& trailData = context.RenderHelperEx.EmplaceButtonTrail();
+						context.RenderHelperEx.ConstructButtonTrail(trailData, onScreenTarget.Type, progress, progressUnbound, properties, onScreenPair.FlyingTime, onScreenTarget.Flags.IsChance);
+						trailData.Long = true;
+						trailData.Length = onScreenTarget.LengthTime;
+						trailData.FlyingTime = onScreenPair.FlyingTime.TotalSeconds();
 					}
 				}
 
