@@ -21,8 +21,8 @@ namespace Comfy::Studio::Editor
 
 			// 考虑到需要管理长条首尾生命逻辑，这里还是需要储存ID
 			TimelineTargetID ID;
+			TimelineTargetID NextID;
 			TimelineTargetID PreviousID;
-			TimelineTargetID ReferenceID;
 
 			// 注意Clover的实现使用的是方法，这里直接进行了静态储存
 			bool IsLongStart;
@@ -241,8 +241,9 @@ namespace Comfy::Studio::Editor
 
 					// 储存ID
 					newTarget.ID = sourceTarget.ID;
+					newTarget.NextID = sourceTarget.NextID;
 					newTarget.PreviousID = sourceTarget.PreviousID;
-					newTarget.ReferenceID = sourceTarget.ReferenceID;
+					
 
 					// 将Long和Link的属性方法静态储存
 					newTarget.IsLongStart = sourceTarget.IsLongStart();
