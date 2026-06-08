@@ -51,6 +51,22 @@ namespace Comfy::Studio::Editor
 	{
 		PlayButtonSoundType(ButtonSoundType::Star, {}, startTime, externalClock);
 	}
+	// 添加双按音效
+	void ButtonSoundController::PlayNormalWSound(TimeSpan startTime, std::optional<TimeSpan> externalClock)
+	{
+		PlayButtonSoundType(ButtonSoundType::NormalW, {}, startTime, externalClock);
+	}
+	
+	// 添加长按开始和结束
+	void ButtonSoundController::PlayLongSoundStart(TimeSpan startTime, std::optional<TimeSpan> externalClock)
+	{
+		PlayButtonSoundType(ButtonSoundType::LongFirst, {}, startTime, externalClock);
+	}
+
+	void ButtonSoundController::PlayLongSoundEnd(TimeSpan startTime, std::optional<TimeSpan> externalClock)
+	{
+		PlayButtonSoundType(ButtonSoundType::LongEnd, {}, startTime, externalClock);
+	}
 
 	void ButtonSoundController::PlayChanceSound(TimeSpan startTime, std::optional<TimeSpan> externalClock)
 	{
@@ -90,6 +106,23 @@ namespace Comfy::Studio::Editor
 			subVoice.SetIsLooping(false);
 			subVoice.SetPauseOnEnd(true);
 		}
+
+
+	}
+	void ButtonSoundController::FadeOutSustainSound(TimeSpan startTime)
+	{
+		auto& voice = sustainStartVoicePool[DecrementRingIndex<PreSlotSustainVoicePoolSize>(sustainStartPoolRingIndex)];
+		const auto voicePosition = (voice.GetPosition() - startTime);
+		voice.SetVolumeMap(voicePosition, voicePosition + chainFadeOutDuration, 1.0f, 0.0f);
+		if (preSlotSustainVoices.GetPosition() < TimeSpan::Zero())
+		{
+			preSlotSustainVoices.SetIsPlaying(false);
+		}
+		else
+		{
+			preSlotSustainVoices.SetIsLooping(false);
+			preSlotSustainVoices.SetPauseOnEnd(true);
+		}
 	}
 
 	void ButtonSoundController::PlaySliderTouch(i32 sliderTouchIndex, f32 baseVolume)
@@ -114,6 +147,14 @@ namespace Comfy::Studio::Editor
 
 		for (auto& voice : perSlotChainSubVoices)
 			voice.SetIsPlaying(false);
+	}
+	void ButtonSoundController::PauseAllSustainSounds()
+	{
+		for (auto& voice : sustainStartVoicePool)
+		{
+			voice.SetIsPlaying(false);
+		}
+		preSlotSustainVoices.SetIsPlaying(false);
 	}
 
 	void ButtonSoundController::PauseAllNegativeVoices()
@@ -189,6 +230,31 @@ namespace Comfy::Studio::Editor
 			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound ChainSubVoice[%c]", getSlotCharID(slotIndex)));
 			voice = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
 		}
+
+		
+		for (size_t i = 0; i < PreSlotSustainVoicePoolSize; i++)
+		{
+			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainStartVoicePool[%02zu]", i));
+			sustainStartVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
+			sustainStartVoicePool[i].SetPauseOnEnd(true);
+		}
+		for (size_t i = 0; i < PreSlotSustainVoicePoolSize; i++)
+		{
+			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainEndVoicePool[%02zu]", i));
+			sustainEndVoicePool[i] = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
+			sustainEndVoicePool[i].SetPauseOnEnd(true);
+
+		}
+
+		for (size_t slotIndex = 0; slotIndex < 1; slotIndex++)
+		{
+			auto& voice = preSlotSustainVoices;
+			const auto nameView = std::string_view(nameBuffer, sprintf_s(nameBuffer, "ButtonSound SustainSubVoice"));
+			voice = audioEngine.AddVoice(Audio::SourceHandle::Invalid, nameView, false);
+			voice.SetPauseOnEnd(true);
+		}
+		
+
 	}
 
 	void ButtonSoundController::UnloadVoicePools()
@@ -215,6 +281,15 @@ namespace Comfy::Studio::Editor
 
 		for (auto& voice : perSlotChainSubVoices)
 			audioEngine.RemoveVoice(voice);
+
+		// 清除长条音
+		for (auto& voice : sustainStartVoicePool)
+			audioEngine.RemoveVoice(voice);
+
+		for (auto& voice : sustainEndVoicePool)
+			audioEngine.RemoveVoice(voice);
+
+		audioEngine.RemoveVoice(preSlotSustainVoices);
 	}
 
 	void ButtonSoundController::PlayButtonSoundType(ButtonSoundType type, ChainSoundSlot slot, TimeSpan startTime, std::optional<TimeSpan> externalClock)
@@ -225,7 +300,7 @@ namespace Comfy::Studio::Editor
 		soundTimings[typeIndex].Update(externalClock);
 
 		Audio::Voice* voice = nullptr;
-		if (type == ButtonSoundType::Button || type == ButtonSoundType::Slide || type == ButtonSoundType::Star || type == ButtonSoundType::Chance)
+		if (type == ButtonSoundType::Button || type == ButtonSoundType::Slide || type == ButtonSoundType::Star || type == ButtonSoundType::Chance|| type == ButtonSoundType::NormalW)
 		{
 			voice = &buttonVoicePool[buttonPoolRingIndex];
 			buttonPoolRingIndex = IncrementRingIndex<ButtonVoicePoolSize>(buttonPoolRingIndex);
@@ -241,6 +316,20 @@ namespace Comfy::Studio::Editor
 		{
 			voice = &chainEndVoicePools[slotIndex][chainEndPoolRingIndices[slotIndex]];
 			chainEndPoolRingIndices[slotIndex] = IncrementRingIndex<PerSlotChainVoicePoolSize>(chainEndPoolRingIndices[slotIndex]);
+		}
+		// 初始化长条音线程池
+		else if (type == ButtonSoundType::LongFirst)
+		{
+			voice = &sustainStartVoicePool[sustainStartPoolRingIndex];
+			sustainStartPoolRingIndex = IncrementRingIndex<PreSlotSustainVoicePoolSize>(sustainStartPoolRingIndex);
+
+			voice->ResetVolumeMap();
+		}
+		else if (type == ButtonSoundType::LongEnd)
+		{
+			voice = &sustainEndVoicePool[sustainEndPoolRingIndex];
+			sustainEndPoolRingIndex = IncrementRingIndex<PreSlotSustainVoicePoolSize>(sustainEndPoolRingIndex);
+
 		}
 		else
 		{
@@ -259,6 +348,17 @@ namespace Comfy::Studio::Editor
 			// NOTE: Or maybe instead of a fixed loop these should be played every n-th chain fragment past the end of the first chain sound (?)
 			auto& subVoice = perSlotChainSubVoices[slotIndex];
 			subVoice.SetSource(GetSource(ButtonSoundType::ChainSlideSub));
+			subVoice.SetVolume(masterVolume);
+			subVoice.SetPosition(startTime - voice->GetDuration());
+			subVoice.SetIsPlaying(true);
+			subVoice.SetIsLooping(true);
+			subVoice.SetPauseOnEnd(false);
+		}
+		else if(type == ButtonSoundType::LongFirst)
+		{
+			// 现阶段使用的是自制的音效文件，后续需要修复
+			auto& subVoice = preSlotSustainVoices;
+			subVoice.SetSource(GetSource(ButtonSoundType::LongSub));
 			subVoice.SetVolume(masterVolume);
 			subVoice.SetPosition(startTime - voice->GetDuration());
 			subVoice.SetIsPlaying(true);
@@ -292,6 +392,14 @@ namespace Comfy::Studio::Editor
 			return soundEffectManager.GetSlideSound(7);
 		case ButtonSoundType::Chance:
 			return soundEffectManager.Find("pvchange04");
+		case ButtonSoundType::NormalW:
+			return soundEffectManager.Find("button_w1_mmv");
+		case ButtonSoundType::LongFirst:
+			return soundEffectManager.Find("button_l1_on_mmv");
+		case ButtonSoundType::LongSub:
+			return soundEffectManager.Find("button_l1_loop_mmv");
+		case ButtonSoundType::LongEnd:
+			return soundEffectManager.Find("button_l1_off_mmv");
 		}
 
 		return Audio::SourceHandle::Invalid;

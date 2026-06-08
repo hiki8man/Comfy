@@ -315,9 +315,35 @@ namespace Comfy::Studio::Editor
 						buttonSoundController.FadeOutLastChainSound(chainSoundSlot, startTime);
 					}
 				}
+
+				// 播放长条音
+				else if (target.Flags.IsLong)
+				{
+					
+					if (static_cast<i32>(target.NextID) != 0)
+					{
+
+						buttonSoundController.PlayLongSoundStart(startTime, externalClock);
+					}
+					if (static_cast<i32>(target.PreviousID) != 0)
+					{
+
+						buttonSoundController.PlayLongSoundEnd(startTime, externalClock);
+						buttonSoundController.FadeOutSustainSound(startTime);
+					}
+				}
+
 				else if (IsStarButtonType(target.Type))
 				{
 					buttonSoundController.PlayStarSound(startTime, externalClock);
+				}
+				else if (target.Flags.IsDouble)
+				{
+					buttonSoundController.PlayNormalWSound(startTime, externalClock);
+				}
+				else if (target.Flags.IsChance)
+				{
+					buttonSoundController.PlayChanceSound(startTime, externalClock);
 				}
 				else if (IsSlideButtonType(target.Type))
 				{
@@ -3076,6 +3102,7 @@ namespace Comfy::Studio::Editor
 			buttonSoundController.PlayStarSound();
 		else if (IsSlideButtonType(type))
 			buttonSoundController.PlaySlideSound();
+
 		else
 			buttonSoundController.PlayButtonSound();
 	}
@@ -3094,6 +3121,7 @@ namespace Comfy::Studio::Editor
 		PlaySingleTargetButtonSoundAndAnimation(target.Type, target.Tick);
 	}
 
+
 	void TargetTimeline::PlaySingleTargetButtonSoundAndAnimation(ButtonType buttonType, BeatTick buttonTick)
 	{
 		// NOTE: During playback the sound will be handled automatically already
@@ -3104,6 +3132,8 @@ namespace Comfy::Studio::Editor
 		buttonAnimations[buttonIndex].Tick = buttonTick;
 		buttonAnimations[buttonIndex].ElapsedTime = TimeSpan::Zero();
 	}
+	
+
 
 	TimeSpan TargetTimeline::GetCursorTime() const
 	{
@@ -3312,6 +3342,7 @@ namespace Comfy::Studio::Editor
 		lastFrameButtonSoundCursorTime = thisFrameButtonSoundCursorTime = (newCursorTime - buttonSoundFutureOffset);
 		buttonSoundController.PauseAllNegativeVoices();
 		buttonSoundController.PauseAllChainSounds();
+		buttonSoundController.PauseAllSustainSounds();
 		metronome.PauseAllNegativeVoices();
 	}
 
