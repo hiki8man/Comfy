@@ -329,7 +329,7 @@ namespace Comfy::Studio::Editor
 					{
 
 						buttonSoundController.PlayLongSoundEnd(startTime, externalClock);
-						buttonSoundController.FadeOutSustainSound(startTime);
+						buttonSoundController.FadeOutLastLongSound(startTime);
 					}
 				}
 
