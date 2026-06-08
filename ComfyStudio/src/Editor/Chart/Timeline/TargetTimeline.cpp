@@ -3342,7 +3342,7 @@ namespace Comfy::Studio::Editor
 		lastFrameButtonSoundCursorTime = thisFrameButtonSoundCursorTime = (newCursorTime - buttonSoundFutureOffset);
 		buttonSoundController.PauseAllNegativeVoices();
 		buttonSoundController.PauseAllChainSounds();
-		buttonSoundController.PauseAllSustainSounds();
+		buttonSoundController.PauseAllLongSounds();
 		metronome.PauseAllNegativeVoices();
 	}
 

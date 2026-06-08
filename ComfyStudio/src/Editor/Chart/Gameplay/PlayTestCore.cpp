@@ -18,20 +18,27 @@ namespace Comfy::Studio::Editor
 			PlayTestSlidePositionType SlidePosition;
 			TargetFlags Flags;
 			TargetProperties Properties;
-			// Clover的实现直接给的函数，需要在这里添加新的bool便于试玩模式使用
-			// 注意Clover的实现使用的是方法，这里是变量
+
+			// 考虑到需要管理长条首尾生命逻辑，这里还是需要储存ID
+			TimelineTargetID ID;
+			TimelineTargetID PreviousID;
+			TimelineTargetID ReferenceID;
+
+			// 注意Clover的实现使用的是方法，这里直接进行了静态储存
 			bool IsLongStart;
 			bool IsLongEnd;
 			bool IsLinkStart;
 			bool IsLinkEnd;
 
-			// 添加长条持续时间
-			f32 LengthTime;
+			// 添加长条持续时间避免二次计算
+			TimeSpan LengthTime;
 
 			TimeSpan RemainingTimeOnHit;
 			HitEvaluation HitEvaluation;
 			HitPrecision HitPrecision;
 
+			// 添加检测释放变量
+			bool HasBeenReleased;
 			bool HasBeenHit;
 			bool HasBeenChainHit;
 			bool HasAnyChainFragmentFailed;
@@ -40,6 +47,8 @@ namespace Comfy::Studio::Editor
 			bool ThisFragmentCausedChainFailure;;
 			bool HasTimedOut;
 			bool WrongTypeOnTimeOut;
+			// 将 NoLongerValid 更换到Target实例兼容长条生命周期问题
+			bool NoLongerValid;
 		};
 
 		struct PlayTestSyncPair
@@ -48,7 +57,8 @@ namespace Comfy::Studio::Editor
 			u8 TargetCount;
 
 			bool HasBeenAdded;
-			bool NoLongerValid;
+			// 移动至Target
+			//bool NoLongerValid;
 
 			TimeSpan TargetTime;
 			TimeSpan ButtonTime;
@@ -129,6 +139,16 @@ namespace Comfy::Studio::Editor
 			}
 
 			return holdFlags;
+		}
+
+		constexpr bool AllTargetsNoLongerValid(const PlayTestSyncPair& syncPair)
+		{
+			for (size_t i = 0; i < syncPair.TargetCount; i++)
+			{
+				if (!syncPair.Targets[i].NoLongerValid)
+					return false;
+			}
+			return true;
 		}
 
 		constexpr bool AnyInSyncPairHasBeenHitByPlayer(const PlayTestSyncPair& syncPair)
@@ -219,7 +239,12 @@ namespace Comfy::Studio::Editor
 					newTarget.Flags = sourceTarget.Flags;
 					newTarget.Properties = Rules::TryGetProperties(sourceTarget);
 
-					// 将Long和Link的属性方法储存
+					// 储存ID
+					newTarget.ID = sourceTarget.ID;
+					newTarget.PreviousID = sourceTarget.PreviousID;
+					newTarget.ReferenceID = sourceTarget.ReferenceID;
+
+					// 将Long和Link的属性方法静态储存
 					newTarget.IsLongStart = sourceTarget.IsLongStart();
 					newTarget.IsLongEnd = sourceTarget.IsLongEnd();
 					newTarget.IsLinkStart = sourceTarget.IsLinkStarStart();
@@ -227,14 +252,9 @@ namespace Comfy::Studio::Editor
 
 
 					// [NOTE] 这里的LengthTime只记录了Tick，后面初始化spawnTimes时会重新计算
-					newTarget.LengthTime = 0.0f;
+					newTarget.LengthTime = TimeSpan::Zero();
 					if (newTarget.IsLongStart)
-					{
-						f32 lengthInTicks = chart.Targets.GetLengthInTicks(sourceTarget).BeatsFraction() / 4.0f;
-						if (lengthInTicks > 0.0f)
-							newTarget.LengthTime = lengthInTicks;
-					}
-		
+						newTarget.LengthTime = TimeSpan::FromSeconds(chart.Targets.GetLengthInTicks(sourceTarget).BeatsFraction() / 4.0f);
 				}
 
 				for (size_t i = 0; i < newPair.TargetCount; i++)
@@ -252,13 +272,15 @@ namespace Comfy::Studio::Editor
 				newPair.ButtonTime = spawnTimes.ButtonTime;
 				newPair.FlyingTime = spawnTimes.FlyingTime;
 
+				const auto RealBPMTime = spawnTimes.RealBPM.TotalSeconds();
+
 				for (size_t i = 0; i < newPair.TargetCount; i++)
 				{
 					newPair.PositionCenter += newPair.Targets[i].Properties.Position;
-					// 实际计算Length的地方
+					// 将先前记录的tick转换为时间，注意这时还没有考虑BPM变化导致的长条持续时间变化，所以先记录下来，后面初始化spawnTimes时会重新计算
 					if (newPair.Targets[i].IsLongStart)
 					{
-						newPair.Targets[i].LengthTime = newPair.Targets[i].LengthTime * spawnTimes.RealBPM.TotalSeconds();
+						newPair.Targets[i].LengthTime = newPair.Targets[i].LengthTime * RealBPMTime;
 					}
 				}
 					
@@ -273,7 +295,7 @@ namespace Comfy::Studio::Editor
 		{
 			for (auto& onScreenPair : onScreenTargetPairs)
 			{
-				if (onScreenPair.NoLongerValid || AllInSyncPairHaveBeenHit(onScreenPair))
+				if (AllTargetsNoLongerValid(onScreenPair) || AllInSyncPairHaveBeenHit(onScreenPair))
 					continue;
 
 				const auto remainingTime = (onScreenPair.ButtonTime - playbackTime);
@@ -603,24 +625,36 @@ namespace Comfy::Studio::Editor
 
 			for (auto& onScreenPair : onScreenTargetPairs)
 			{
-				if (onScreenPair.NoLongerValid)
+				if (AllTargetsNoLongerValid(onScreenPair))
 					continue;
 
 				const auto elapsedTime = playbackTime - onScreenPair.TargetTime;
 				const auto remainingTime = onScreenPair.ButtonTime - playbackTime;
-
 				const f32 progressUnbound = static_cast<f32>(ConvertRange(onScreenPair.TargetTime.TotalSeconds(), onScreenPair.ButtonTime.TotalSeconds(), 0.0, 1.0, playbackTime.TotalSeconds()));
 				const f32 progress = Clamp(progressUnbound, 0.0f, 1.0f);
 
 				constexpr TimeSpan maxPostHitAnimationDuration = TimeSpan::FromSeconds(2.0);
-				if (remainingTime < -maxPostHitAnimationDuration)
-					onScreenPair.NoLongerValid = true;
+
+				// [NOTE] 现在的做法是直接忽略了所有多押Note
+				// 未来需要考虑修复
+
 
 				const f32 hitMissProgress = Clamp(static_cast<f32>(ConvertRange(0.0, -HitThreshold::Worst.TotalSeconds(), 1.0, 0.0, remainingTime.TotalSeconds())), 0.0f, 1.0f);
 
 				for (size_t i = 0; i < onScreenPair.TargetCount; i++)
 				{
 					auto& onScreenTarget = onScreenPair.Targets[i];
+
+					if (onScreenTarget.NoLongerValid) 
+					{ 
+						continue;
+					}
+					else 
+					{
+						auto targetRemainingTime = remainingTime + onScreenTarget.LengthTime;
+						if (targetRemainingTime <= -maxPostHitAnimationDuration)
+							onScreenTarget.NoLongerValid = true;
+					}
 
 					if (onScreenTarget.Flags.IsChain)
 					{
@@ -689,6 +723,7 @@ namespace Comfy::Studio::Editor
 							context.Score.ComboCount = 0;
 						}
 					}
+					
 					else if (!onScreenTarget.HasBeenHit && remainingTime < -HitThreshold::Worst)
 					{
 						onScreenTarget.HasBeenHit = true;
@@ -775,13 +810,14 @@ namespace Comfy::Studio::Editor
 						trailData.Opacity = hitMissProgress;
 					}
 					
-					if (onScreenTarget.IsLongStart &&!onScreenTarget.HasTimedOut)
+					if (onScreenTarget.IsLongStart &&!onScreenTarget.HasBeenReleased)
 					{
 						// [NOTE] 新加的长条尾绘制逻辑，问题很多需要修正
+						// 现阶段目标是让AutoPlay能够正确运行，因此首尾的状态没有统一
 						auto& trailData = context.RenderHelperEx.EmplaceButtonTrail();
 						context.RenderHelperEx.ConstructButtonTrail(trailData, onScreenTarget.Type, progress, progressUnbound, properties, onScreenPair.FlyingTime, onScreenTarget.Flags.IsChance);
 						trailData.Long = true;
-						trailData.Length = onScreenTarget.LengthTime;
+						trailData.Length = onScreenTarget.LengthTime.TotalSeconds();
 						trailData.FlyingTime = onScreenPair.FlyingTime.TotalSeconds();
 					}
 				}
@@ -1105,13 +1141,14 @@ namespace Comfy::Studio::Editor
 			{
 				if (pair.TargetTime < startTime)
 				{
-					pair.NoLongerValid = true;
+					//pair.NoLongerValid = true;
 
 					for (size_t i = 0; i < pair.TargetCount; i++)
 					{
+						pair.Targets[i].NoLongerValid = true;
 						// NOTE: Ensure all chains always have a valid start fragment
 						if (pair.Targets[i].Flags.IsChain)
-							ForEachFragmentInChain(availableTargetPairs, pair, pair.Targets[i], [&](auto& chainPair, auto& fragment) { chainPair.NoLongerValid = true; });
+							ForEachFragmentInChain(availableTargetPairs, pair, pair.Targets[i], [&](auto& chainPair, auto& fragment){fragment.NoLongerValid = true;});
 					}
 				}
 			}
@@ -1127,7 +1164,7 @@ namespace Comfy::Studio::Editor
 
 			for (auto& onScreenPair : onScreenTargetPairs)
 			{
-				if (onScreenPair.NoLongerValid || AllInSyncPairHaveBeenHit(onScreenPair))
+				if (AllTargetsNoLongerValid(onScreenPair) || AllInSyncPairHaveBeenHit(onScreenPair))
 					continue;
 
 				const auto remainingTime = (onScreenPair.ButtonTime - playbackTime);
@@ -1169,7 +1206,7 @@ namespace Comfy::Studio::Editor
 
 			for (auto& onScreenPair : onScreenTargetPairs)
 			{
-				if (onScreenPair.NoLongerValid || AllInSyncPairHaveBeenHit(onScreenPair))
+				if (AllTargetsNoLongerValid(onScreenPair) || AllInSyncPairHaveBeenHit(onScreenPair))
 					continue;
 
 				for (size_t i = 0; i < onScreenPair.TargetCount; i++)
@@ -1430,7 +1467,7 @@ namespace Comfy::Studio::Editor
 
 			for (auto& onScreenPair : onScreenTargetPairs)
 			{
-				if (onScreenPair.NoLongerValid)
+				if (AllTargetsNoLongerValid(onScreenPair))
 					continue;
 
 				for (size_t i = 0; i < onScreenPair.TargetCount; i++)
