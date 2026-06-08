@@ -18,6 +18,15 @@ namespace Comfy::Studio::Editor
 			PlayTestSlidePositionType SlidePosition;
 			TargetFlags Flags;
 			TargetProperties Properties;
+			// Clover的实现直接给的函数，需要在这里添加新的bool便于试玩模式使用
+			// 注意Clover的实现使用的是方法，这里是变量
+			bool IsLongStart;
+			bool IsLongEnd;
+			bool IsLinkStart;
+			bool IsLinkEnd;
+
+			// 添加长条持续时间
+			TimeSpan LengthTime;
 
 			TimeSpan RemainingTimeOnHit;
 			HitEvaluation HitEvaluation;
@@ -199,6 +208,7 @@ namespace Comfy::Studio::Editor
 
 				auto& newPair = outTargets.emplace_back();
 				newPair.TargetCount = static_cast<u8>(Min(static_cast<size_t>(frontPairSourceTarget.Flags.SyncPairCount), newPair.Targets.size()));
+
 				for (size_t i = 0; i < newPair.TargetCount; i++)
 				{
 					const auto& sourceTarget = chart.Targets[targetIndex + i];
@@ -208,6 +218,23 @@ namespace Comfy::Studio::Editor
 					newTarget.SlidePosition = PlayTestSlidePositionType::None;
 					newTarget.Flags = sourceTarget.Flags;
 					newTarget.Properties = Rules::TryGetProperties(sourceTarget);
+
+					// 将Long和Link的属性方法储存
+					newTarget.IsLongStart = sourceTarget.IsLongStart();
+					newTarget.IsLongEnd = sourceTarget.IsLongEnd();
+					newTarget.IsLinkStart = sourceTarget.IsLinkStarStart();
+					newTarget.IsLinkEnd = sourceTarget.IsLinkStarEnd();
+
+
+					// [NOTE] 这里的LengthTime只记录了Tick，后面初始化spawnTimes时会重新计算
+					newTarget.LengthTime = TimeSpan::Zero();
+					if (newTarget.IsLongStart)
+					{
+						f32 lengthInTicks = chart.Targets.GetLengthInTicks(sourceTarget).BeatsFraction() / 4.0f;
+						if (lengthInTicks > 0.0f)
+							newTarget.LengthTime = TimeSpan::FromSeconds(lengthInTicks);
+					}
+		
 				}
 
 				for (size_t i = 0; i < newPair.TargetCount; i++)
@@ -226,7 +253,15 @@ namespace Comfy::Studio::Editor
 				newPair.FlyingTime = spawnTimes.FlyingTime;
 
 				for (size_t i = 0; i < newPair.TargetCount; i++)
+				{
 					newPair.PositionCenter += newPair.Targets[i].Properties.Position;
+					// 实际计算Length的地方
+					if (newPair.Targets[i].IsLongStart)
+					{
+						newPair.Targets[i].LengthTime = newPair.Targets[i].LengthTime * spawnTimes.RealBPM.TotalSeconds();
+					}
+				}
+					
 				newPair.PositionCenter /= static_cast<f32>(newPair.TargetCount);
 
 				assert(frontPairSourceTarget.Flags.SyncPairCount >= 1);
