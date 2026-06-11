@@ -1110,7 +1110,7 @@ namespace Comfy::Studio::Editor
 			constexpr i32 vertexCount = (segmentCount * verticesPerSegment);
 
 			constexpr auto texSizeScale = vec2(8.0f, 0.25f);
-			constexpr auto texCoordOffsetU = 0.35f;
+			constexpr auto texCoordOffsetU = -0.02f;
 
 			static constexpr std::array<u8, segmentCount> trailSegmentAlphaValues =
 			{
@@ -1163,7 +1163,7 @@ namespace Comfy::Studio::Editor
 			for (i32 vertex = 0; vertex < vertexCount; vertex += verticesPerSegment)
 			{
 				if (vertex > 0)
-					coordDistU += (glm::distance(vertices[vertex - 1].Position, vertices[vertex].Position) / sprSize.x) * -0.5f;
+					coordDistU += (glm::distance(vertices[vertex - 1].Position, vertices[vertex].Position) / sprSize.x) * -1.28f;
 
 				vertices[vertex + 0].TextureCoordinates = vec2(coordDistU, texCoordsV.x);
 				vertices[vertex + 1].TextureCoordinates = vec2(coordDistU, texCoordsV.y);
