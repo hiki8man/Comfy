@@ -1738,9 +1738,9 @@ namespace Comfy::Studio
 						writer.MemberStr(UserIDs::TargetPreset_StaticSyncPresets_Name, syncPreset.Name);
 						writer.MemberArrayBegin(UserIDs::TargetPreset_StaticSyncPresets_Targets);
 						{
-							for (size_t i = static_cast<size_t>(syncPreset.TargetCount) - 1; i < 0; i--)
+							for (size_t i = 0; i < syncPreset.TargetCount; i++)
 							{
-								const auto& targetData = syncPreset.Targets[i];
+								const auto& targetData = syncPreset.Targets[syncPreset.TargetCount - i - 1];
 
 								writer.ObjectBegin();
 								writer.MemberEnumStr(UserIDs::TargetPreset_StaticSyncPresets_Targets_ButtonType, targetData.Type, UserIDs::ButtonTypeEnumNames);
