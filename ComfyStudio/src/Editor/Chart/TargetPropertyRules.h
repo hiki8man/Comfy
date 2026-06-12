@@ -21,7 +21,7 @@ namespace Comfy::Studio::Editor
 
 		progress = (1.0f - progress);
 
-		const auto sinePoint = vec2(progress * distance, glm::sin(progress * glm::pi<f32>() * frequency) / 12.0f * amplitude);
+		const auto sinePoint = vec2(progress * distance, glm::sin(progress * glm::pi<f32>() * frequency) / 12.5f * amplitude);
 		return rotate(sinePoint, glm::radians(degrees - 90.0f)) + pivot;
 	}
 
