@@ -1613,6 +1613,7 @@ namespace Comfy::Studio::Editor
 			{ &userData.Input.TargetTimeline_SetPlaybackSpeed_25Percent, "Target Timeline - Set Playback Speed 25%" },
 			{ &userData.Input.TargetTimeline_ToggleMetronome, "Target Timeline - Toggle Metronome" },
 			{ &userData.Input.TargetTimeline_ToggleTargetHolds, "Target Timeline - Toggle Target Holds" },
+			{ &userData.Input.TargetTimeline_ToggleTargetChance, "Target Timeline - Toggle Target Chance" },
 			{ &userData.Input.TargetTimeline_PlaceTriangle, "Target Timeline - Place Triangle" },
 			{ &userData.Input.TargetTimeline_PlaceSquare, "Target Timeline - Place Square" },
 			{ &userData.Input.TargetTimeline_PlaceCross, "Target Timeline - Place Cross" },

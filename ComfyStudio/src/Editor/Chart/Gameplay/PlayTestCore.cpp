@@ -1090,7 +1090,9 @@ namespace Comfy::Studio::Editor
 						if (target.HasBeenHit || target.Flags.IsChain)
 							continue;
 
-						if (IsSlideButtonType(target.Type))
+						if (target.Flags.IsChance)
+							sharedContext.ButtonSoundController->PlayChanceSound();
+						else if (IsSlideButtonType(target.Type))
 							sharedContext.ButtonSoundController->PlaySlideSound();
 						else
 							sharedContext.ButtonSoundController->PlayButtonSound();
@@ -1247,7 +1249,9 @@ namespace Comfy::Studio::Editor
 
 					bool successfulHit = false;
 
-					if (matchingType && IsSlideButtonType(nextTargetToHit->Type))
+					if (nextTargetToHit->Flags.IsChance)
+						sharedContext.ButtonSoundController->PlayChanceSound();
+					else if (matchingType && IsSlideButtonType(nextTargetToHit->Type))
 					{
 						sharedContext.ButtonSoundController->PlaySlideSound();
 						lastSlideActionStopwatch.Restart();
