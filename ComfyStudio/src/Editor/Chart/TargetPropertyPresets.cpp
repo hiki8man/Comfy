@@ -221,7 +221,7 @@ namespace Comfy::Studio::Editor
 			}
 			case DynamicSyncPreset::Square:
 			{
-				if (!DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Triangle, ButtonType::Square, ButtonType::Cross, ButtonType::Circle }))
+				if (!DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Circle, ButtonType::Cross, ButtonType::Square, ButtonType::Triangle }))
 					return false;
 
 				constexpr std::array<AngleCorner, EnumCount<ButtonType>()> typeToCorner = { AngleCorner::TopLeft, AngleCorner::TopRight, AngleCorner::BotLeft, AngleCorner::BotRight, };
@@ -254,8 +254,8 @@ namespace Comfy::Studio::Editor
 			}
 			case DynamicSyncPreset::Triangle:
 			{
-				const bool isLeftTriangle = DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Triangle, ButtonType::Square, ButtonType::Cross });
-				const bool isRightTriangle = DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Square, ButtonType::Cross, ButtonType::Circle });
+				const bool isLeftTriangle = DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Cross, ButtonType::Square, ButtonType::Triangle });
+				const bool isRightTriangle = DoTypesMatch(syncPair, pairCount, std::array { ButtonType::Circle, ButtonType::Cross, ButtonType::Square });
 
 				if (!isLeftTriangle && !isRightTriangle)
 					return false;

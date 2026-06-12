@@ -181,12 +181,12 @@ namespace Comfy::Studio::Editor
 				{
 					switch (type)
 					{
-					case ButtonType::Circle: if (flags.SameTypeSyncIndex == 0) return ButtonType::Triangle; break;
-					case ButtonType::Cross: if (flags.SameTypeSyncIndex == 0) return ButtonType::Square; break;
-					case ButtonType::Square: if (flags.SameTypeSyncIndex == 1) return ButtonType::Cross; break;
-					case ButtonType::Triangle: if (flags.SameTypeSyncIndex == 1) return ButtonType::Circle; break;
-					case ButtonType::SlideL: if (flags.SameTypeSyncIndex == 1) return ButtonType::SlideR; break;
-					case ButtonType::SlideR: if (flags.SameTypeSyncIndex == 0) return ButtonType::SlideL; break;
+					case ButtonType::Circle: if (flags.SameTypeSyncIndex == 1) return ButtonType::Triangle; break;
+					case ButtonType::Cross: if (flags.SameTypeSyncIndex == 1) return ButtonType::Square; break;
+					case ButtonType::Square: if (flags.SameTypeSyncIndex == 0) return ButtonType::Cross; break;
+					case ButtonType::Triangle: if (flags.SameTypeSyncIndex == 0) return ButtonType::Circle; break;
+					case ButtonType::SlideL: if (flags.SameTypeSyncIndex == 0) return ButtonType::SlideR; break;
+					case ButtonType::SlideR: if (flags.SameTypeSyncIndex == 1) return ButtonType::SlideL; break;
 					}
 				}
 				return type;
@@ -222,7 +222,7 @@ namespace Comfy::Studio::Editor
 			constexpr bool IsUpperPartOfSyncPair(const ButtonType type, const TargetFlags flags)
 			{
 				if (flags.IndexWithinSyncPair < (flags.SyncPairCount / 2))
-					return true;
+					return false;
 
 				if (flags.SyncPairCount == 3)
 				{
@@ -232,7 +232,7 @@ namespace Comfy::Studio::Editor
 						return false;
 				}
 
-				return false;
+				return true;
 			}
 
 			constexpr TargetProperties PresetTargetProperties(ButtonType type, BeatTick tick, TargetFlags flags)
