@@ -128,13 +128,15 @@ namespace Comfy::Studio::Editor
 
 			// NOTE: In the case the song or movie is set to start before time 0, as that would require a negative time command which typically isn't supported
 			const TimeSpan targetTimeDelayToEnsurePositiveSongAndMovieStart = Max(Max(songOffset, movieOffset), TimeSpan::Zero());
+
+			// Fix songOffset calculate
 			if (songOffset > TimeSpan::Zero() || movieOffset >= TimeSpan::Zero())
 			{
 				// TODO: Does this correctly handle all casess (?)
 				if (songOffset > movieOffset)
-					moviePlayCommandTime += songOffset.Absolute();
+					moviePlayCommandTime += (movieOffset > TimeSpan::Zero()) ? songOffset - movieOffset : songOffset.Absolute();
 				else if (movieOffset > songOffset)
-					songPlayCommandTime += movieOffset.Absolute();
+					songPlayCommandTime += (songOffset > TimeSpan::Zero()) ? movieOffset - songOffset : movieOffset.Absolute();
 			}
 
 			if (!chart.SongFileName.empty())
