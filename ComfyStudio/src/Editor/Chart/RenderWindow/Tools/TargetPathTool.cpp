@@ -428,7 +428,8 @@ namespace Comfy::Studio::Editor
 			return;
 
 		const f32 startAngle = Rules::TryGetProperties(firstFoundTarget).Angle;
-		const f32 endAngle = clockwise ? Rules::TryGetProperties(lastFoundTarget).Angle : Rules::TryGetProperties(lastFoundTarget).Angle - 360.0f;
+		auto fixedendAngle = clockwise ? Rules::TryGetProperties(lastFoundTarget).Angle : Rules::TryGetProperties(lastFoundTarget).Angle - 360.0f;
+		const f32 endAngle = (startAngle > 90.0f && fixedendAngle < -90.0f) ? fixedendAngle + 360.0f : fixedendAngle;
 
 		const i32 startTicks = firstFoundTarget.Tick.Ticks();
 		const i32 endTicks = lastFoundTarget.Tick.Ticks();
