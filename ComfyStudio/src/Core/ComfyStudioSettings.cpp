@@ -828,6 +828,7 @@ namespace Comfy::Studio
 			func(userData.Input.TargetPreview_PathTool_InterpolateAnglesClockwise, "target_preview_path_tool_interpolate_angles_clockwise");
 			func(userData.Input.TargetPreview_PathTool_InterpolateAnglesCounterclockwise, "target_preview_path_tool_interpolate_angles");
 			func(userData.Input.TargetPreview_PathTool_InterpolateDistances, "target_preview_path_tool_interpolate_distances");
+			func(userData.Input.TargetPreview_PathTool_InterpolateAmplitude, "target_preview_path_tool_interpolate_amplitude");
 			func(userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositive, "target_preview_path_tool_apply_angle_increments_positive");
 			func(userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack, "target_preview_path_tool_apply_angle_increments_positive_back");
 			func(userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsNegative, "target_preview_path_tool_apply_angle_increments_negative");
@@ -842,7 +843,7 @@ namespace Comfy::Studio
 			func(userData.Input.Playtest_MoveResetPointBackward, "playtest_move_reset_point_backward");
 			func(userData.Input.Playtest_MoveResetPointForward, "playtest_move_reset_point_forward");
 
-			constexpr size_t bindingsHandledInsideThisFunction = 121;
+			constexpr size_t bindingsHandledInsideThisFunction = 122;
 			constexpr size_t totalBindingsCountInsideUserDataHeader = (sizeof(userData.Input) - sizeof(userData.Input.ControllerLayoutMappings) - sizeof(userData.Input.PlaytestBindings)) / sizeof(Input::MultiBinding);
 			static_assert(totalBindingsCountInsideUserDataHeader == bindingsHandledInsideThisFunction);
 		}

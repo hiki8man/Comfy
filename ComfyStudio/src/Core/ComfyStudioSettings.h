@@ -245,6 +245,7 @@ namespace Comfy::Studio
 			Input::MultiBinding TargetPreview_PathTool_InterpolateAnglesClockwise;
 			Input::MultiBinding TargetPreview_PathTool_InterpolateAnglesCounterclockwise;
 			Input::MultiBinding TargetPreview_PathTool_InterpolateDistances;
+			Input::MultiBinding TargetPreview_PathTool_InterpolateAmplitude;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsPositive;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack;
 			Input::MultiBinding TargetPreview_PathTool_ApplyAngleIncrementsNegative;

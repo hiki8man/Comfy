@@ -1658,6 +1658,7 @@ namespace Comfy::Studio::Editor
 			{ &userData.Input.TargetPreview_PathTool_InterpolateAnglesClockwise, "Target Preview - Path Tool - Interpolate Angles Clockwise" },
 			{ &userData.Input.TargetPreview_PathTool_InterpolateAnglesCounterclockwise, "Target Preview - Path Tool - Interpolate Angles" },
 			{ &userData.Input.TargetPreview_PathTool_InterpolateDistances, "Target Preview - Path Tool - Interpolate Distances" },
+			{ &userData.Input.TargetPreview_PathTool_InterpolateAmplitude, "Target Preview - Path Tool - Interpolate Amplitude" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositive, "Target Preview - Path Tool - Apply Angle Increments Positive" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsPositiveBack, "Target Preview - Path Tool - Apply Angle Increments Positive Back" },
 			{ &userData.Input.TargetPreview_PathTool_ApplyAngleIncrementsNegative, "Target Preview - Path Tool - Apply Angle Increments Negative" },

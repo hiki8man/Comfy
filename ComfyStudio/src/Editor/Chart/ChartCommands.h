@@ -530,6 +530,15 @@ namespace Comfy::Studio::Editor
 		std::string_view GetName() const override { return "Change Target Distances"; }
 	};
 
+	class ChangeTargetListAmplitude : public ChangeTargetListProperties
+	{
+	public:
+		ChangeTargetListAmplitude(Chart& chart, std::vector<Data> data) : ChangeTargetListProperties(chart, std::move(data), TargetPropertyFlags_Amplitude) {}
+
+	public:
+		std::string_view GetName() const override { return "Change Target Amplitude"; }
+	};
+
 	class InterpolateTargetListDistances : public ChangeTargetListDistances
 	{
 	public:
@@ -537,6 +546,15 @@ namespace Comfy::Studio::Editor
 
 	public:
 		std::string_view GetName() const override { return "Interpolate Target Distances"; }
+	};
+
+	class InterpolateTargetListAmplitude : public ChangeTargetListAmplitude
+	{
+	public:
+		using ChangeTargetListAmplitude::ChangeTargetListAmplitude;
+
+	public:
+		std::string_view GetName() const override { return "Interpolate Target Amplitude"; }
 	};
 
 	class ApplyTargetListAngleIncrements : public ChangeTargetListAngles
