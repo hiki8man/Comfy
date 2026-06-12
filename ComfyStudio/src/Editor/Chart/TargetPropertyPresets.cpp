@@ -302,13 +302,17 @@ namespace Comfy::Studio::Editor
 				return false;
 
 			for (size_t i = 0; i < pairCount; i++)
-			{
-				if (preset.Targets[i].Type != syncPair[i].Type)
+			{	
+				const auto reverse_index = pairCount - i - 1;
+				if (preset.Targets[i].Type != syncPair[reverse_index].Type)
 					return false;
 			}
 
 			for (size_t i = 0; i < pairCount; i++)
-				outProperties[i].NewValue = preset.Targets[i].Properties;
+			{
+				const auto reverse_index = pairCount - i - 1;
+				outProperties[i].NewValue = preset.Targets[reverse_index].Properties;
+			}
 
 			return true;
 		}
