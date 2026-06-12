@@ -19,6 +19,9 @@ namespace Comfy::Studio::Editor
 		if (static_cast<i32>(frequency) % 2 != 0)
 			frequency *= -1.0f;
 
+		if (distance < 0.0f)
+			frequency *= -1.0f;
+
 		progress = (1.0f - progress);
 
 		const auto sinePoint = vec2(progress * distance, glm::sin(progress * glm::pi<f32>() * frequency) / 12.5f * amplitude);
