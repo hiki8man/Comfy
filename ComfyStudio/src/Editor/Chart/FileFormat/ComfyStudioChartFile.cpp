@@ -263,7 +263,8 @@ namespace Comfy::Studio::Editor
 		if (header.FileMagic != Magic)
 			return IO::StreamResult::BadFormat;
 
-		if (header.MajorVersion > Version::CurrentMajor)
+		bool isF2xFile = static_cast<u16>(header.MajorVersion) == 2;
+		if ((header.MajorVersion > Version::CurrentMajor) && !isF2xFile)
 			return IO::StreamResult::BadFormat;
 
 		if (header.Endianness != Endianness::Little)
@@ -440,7 +441,12 @@ namespace Comfy::Studio::Editor
 																if (nameID == field.Name)
 																{
 																	for (size_t i = 0; i < targetCount; i++)
+																	{ 
 																		field.ReadFunc(reader, chart.Targets[i]);
+																		// For F2x Star ID is same as Conut, we need convert it to SlideL to make sure it's works fine
+																		if ((chart.Targets[i].Type == ButtonType::Count) && isF2xFile)
+																			chart.Targets[i].Type = ButtonType::SlideR;
+																	};
 																	break;
 																}
 															}
