@@ -18,10 +18,10 @@ namespace Comfy::Studio::Editor
 		// NOTE: Both for when the MoviePlayer gets created/deleted and when a file is opened/closed
 		void OnMovieChange(Render::IMoviePlayer* currentMoviePlayer);
 
-		void OnResume(TimeSpan playbackTime);
+		bool OnResume(TimeSpan playbackTime);
 		bool OnPause();
 		bool OnPause(TimeSpan playbackTime);
-		bool OnSeek(TimeSpan newPlaybackTime);
+		bool OnSeek(TimeSpan newPlaybackTime, bool* outWaitForSeekEnd = nullptr);
 
 		// NOTE: Every frame to handle things like delayed playback start
 		void OnUpdateTick(bool isPlaying, TimeSpan playbackTime, TimeSpan currentMovieOffset, f32 currentPlaybackSpeed);
@@ -37,6 +37,8 @@ namespace Comfy::Studio::Editor
 		bool IsMoviePlayerValidAndHasVideo() const;
 
 		bool IsInMovieStartDelay() const;
+		bool IsPastMovieEnd(TimeSpan playbackTime) const;
+		bool IsPlaying() const;
 
 		bool RegisterAsyncCallback(MoviePlayerAsyncCallbackFunc callbackFunc);
 		void ClearAsyncCallback();

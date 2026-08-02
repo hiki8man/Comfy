@@ -11,21 +11,23 @@ namespace Comfy::Studio::Editor
 		deferSingleFrameStep = true;
 	}
 
-	void ChartMoviePlaybackController::OnResume(TimeSpan playbackTime)
+	bool ChartMoviePlaybackController::OnResume(TimeSpan playbackTime)
 	{
 		deferMovieStart = false;
 		if (!IsMoviePlayerValidAndHasVideo())
-			return;
+			return false;
 
 		if (playbackTime < -movieOffset)
 		{
 			deferMovieStart = true;
+			return false;
 		}
 		else
 		{
-			moviePlayer->SetIsPlayingAsync(true);
-			if (moviePlayer->GetPlaybackSpeed() != playbackSpeed)
+			const bool result = moviePlayer->SetIsPlayingAsync(true);
+			if (result && moviePlayer->GetPlaybackSpeed() != playbackSpeed)
 				moviePlayer->SetPlaybackSpeedAsync(playbackSpeed);
+			return result;
 		}
 	}
 
@@ -48,18 +50,36 @@ namespace Comfy::Studio::Editor
 		deferMovieResyncAfterReload = false;
 		moviePlayer->SetIsPlayingAsync(false);
 
-		if (playbackTime < movieOffset)
+		if (playbackTime < -movieOffset)
 			return moviePlayer->SetPositionAsync(TimeSpan::Zero());
 		else
 			return moviePlayer->SetPositionAsync(playbackTime + movieOffset);
 	}
 
-	bool ChartMoviePlaybackController::OnSeek(TimeSpan newPlaybackTime)
+	bool ChartMoviePlaybackController::OnSeek(TimeSpan newPlaybackTime, bool* outWaitForSeekEnd)
 	{
+		if (outWaitForSeekEnd != nullptr)
+			*outWaitForSeekEnd = false;
+
 		if (!IsMoviePlayerValidAndHasVideo())
 			return false;
 
-		return moviePlayer->SetPositionAsync(newPlaybackTime + movieOffset);
+		const bool isBeforeMovieStart = (newPlaybackTime < -movieOffset);
+		const auto duration = moviePlayer->GetDuration();
+		const auto moviePosition = Clamp(newPlaybackTime + movieOffset, TimeSpan::Zero(), duration);
+
+		const auto currentPosition = moviePlayer->GetPosition();
+		const auto seekDistance = (moviePosition - currentPosition).Absolute();
+		constexpr auto seekNoOpThreshold = TimeSpan::FromMilliseconds(1.0);
+		// NOTE: No-op / clamped seeks may not emit PlaybackSeekEnd. This small local threshold is not an API guarantee;
+		//		 it only prevents playtest preparation from blocking on tiny Media Engine time discrepancies.
+		const bool waitForSeekEnd = !isBeforeMovieStart && (seekDistance > seekNoOpThreshold);
+		const bool result = moviePlayer->SetPositionAsync(moviePosition);
+
+		if (outWaitForSeekEnd != nullptr)
+			*outWaitForSeekEnd = result && waitForSeekEnd;
+
+		return result;
 	}
 
 	void ChartMoviePlaybackController::OnUpdateTick(bool isPlaying, TimeSpan playbackTime, TimeSpan currentMovieOffset, f32 currentPlaybackSpeed)
@@ -113,10 +133,17 @@ namespace Comfy::Studio::Editor
 
 		if (isPlaying && deferMovieStart && (playbackTime >= -movieOffset))
 		{
-			moviePlayer->SetIsPlayingAsync(true);
-			if (moviePlayer->GetPlaybackSpeed() != playbackSpeed)
-				moviePlayer->SetPlaybackSpeedAsync(playbackSpeed);
-			deferMovieStart = false;
+			const bool result = moviePlayer->GetIsPlaying() || moviePlayer->SetIsPlayingAsync(true);
+			if (result)
+			{
+				if (moviePlayer->GetPlaybackSpeed() != playbackSpeed)
+					moviePlayer->SetPlaybackSpeedAsync(playbackSpeed);
+				deferMovieStart = false;
+			}
+			else
+			{
+				moviePlayer->SetPositionAsync(playbackTime + movieOffset);
+			}
 		}
 
 		// NOTE: Handle the case of having played past the end, paused and rewound
@@ -188,6 +215,16 @@ namespace Comfy::Studio::Editor
 	bool ChartMoviePlaybackController::IsInMovieStartDelay() const
 	{
 		return deferMovieStart;
+	}
+
+	bool ChartMoviePlaybackController::IsPastMovieEnd(TimeSpan playbackTime) const
+	{
+		return IsMoviePlayerValidAndHasVideo() && ((playbackTime + movieOffset) >= moviePlayer->GetDuration());
+	}
+
+	bool ChartMoviePlaybackController::IsPlaying() const
+	{
+		return moviePlayer && moviePlayer->GetIsPlaying();
 	}
 
 	bool ChartMoviePlaybackController::RegisterAsyncCallback(MoviePlayerAsyncCallbackFunc callbackFunc)

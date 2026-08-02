@@ -504,6 +504,12 @@ namespace Comfy::Studio::Editor
 			case PlaybackPreparationState::SeekCompleted:
 				OnPlayerSeekEnd();
 				break;
+			case PlaybackPreparationState::WaitingForPlaying:
+				if (sharedContext.MoviePlaybackController->IsPlaying()) // Fallback when the media engine is already playing but PlaybackStarted was not delivered
+					OnPlayerPreparationFinished();
+				else
+					TryStartPreparedMoviePlayback();
+				break;
 			case PlaybackPreparationState::PlaybackStarted:
 				OnPlayerPreparationFinished();
 				break;
@@ -1556,19 +1562,41 @@ namespace Comfy::Studio::Editor
 			sharedContext.SongVoice->SetPosition(startTime + sharedContext.Chart->SongOffset);
 			sharedContext.SongVoice->SetIsPlaying(false);
 			sharedContext.MoviePlaybackController->OnPause();
-			const bool seekSuccess = sharedContext.MoviePlaybackController->OnSeek(startTime);
+			bool waitForSeekEnd = false;
+			const bool seekSuccess = sharedContext.MoviePlaybackController->OnSeek(startTime, &waitForSeekEnd);
 
-			if (!registerCallbackSuccess || !seekSuccess) // No player or movie
+			if (!registerCallbackSuccess || !seekSuccess) // no player or movie
 			{
 				OnPlayerPreparationFinished();
+			}
+			else if (!waitForSeekEnd) // Seek was a no-op after clamping, e.g. negative movie offset at time zero
+			{
+				OnPlayerSeekEnd();
 			}
 		}
 
 		void OnPlayerSeekEnd()
 		{
 			preparationInfo.playbackPreparationState.store(PlaybackPreparationState::WaitingForPlaying, std::memory_order_release);
+			TryStartPreparedMoviePlayback();
+		}
+
+		void TryStartPreparedMoviePlayback()
+		{
+			if (!sharedContext.MoviePlaybackController->IsMoviePlayerValidAndHasVideo())
+			{
+				OnPlayerPreparationFinished();
+				return;
+			}
+
+			if (sharedContext.MoviePlaybackController->IsPastMovieEnd(preparationInfo.startTime))
+			{
+				OnPlayerPreparationFinished();
+				return;
+			}
 
 			sharedContext.MoviePlaybackController->OnResume(preparationInfo.startTime);
+
 			if (sharedContext.MoviePlaybackController->IsInMovieStartDelay())
 			{
 				OnPlayerPreparationFinished();
