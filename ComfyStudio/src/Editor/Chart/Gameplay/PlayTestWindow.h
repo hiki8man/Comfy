@@ -12,6 +12,7 @@
 #include "ImGui/Gui.h"
 #include "ImGui/Extensions/CheckerboardTexture.h"
 #include "Input/Input.h"
+#include <atomic>
 
 namespace Comfy::Studio::Editor
 {
@@ -20,6 +21,15 @@ namespace Comfy::Studio::Editor
 		None,
 		ReturnCurrentTime,
 		ReturnPrePlayTestTime,
+	};
+
+	enum class PlaybackPreparationState : u8
+	{
+		None,
+		WaitingForSeekEnd,
+		SeekCompleted,
+		WaitingForPlaying,
+		PlaybackStarted,
 	};
 
 	struct PlayTestContext
@@ -48,6 +58,13 @@ namespace Comfy::Studio::Editor
 		ChartMoviePlaybackController* MoviePlaybackController;
 		Audio::Voice* SongVoice;
 		Chart* Chart;
+	};
+
+	struct PlayTestPreparationInfo
+	{
+		TimeSpan startTime = TimeSpan::Zero();
+		bool resetScore = false;
+		std::atomic<PlaybackPreparationState> playbackPreparationState = PlaybackPreparationState::None;
 	};
 
 	class PlayTestWindow : NonCopyable

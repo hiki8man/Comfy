@@ -5,6 +5,8 @@
 
 namespace Comfy::Studio::Editor
 {
+	using MoviePlayerAsyncCallbackFunc = std::function<Comfy::Render::MoviePlayerAsyncCallbackResult(Comfy::Render::MoviePlayerAsyncCallbackParam param)>;
+
 	// NOTE: To handle video sync / playback for both the Editor and Playtest Mode
 	class ChartMoviePlaybackController : NonCopyable
 	{
@@ -17,8 +19,9 @@ namespace Comfy::Studio::Editor
 		void OnMovieChange(Render::IMoviePlayer* currentMoviePlayer);
 
 		void OnResume(TimeSpan playbackTime);
-		void OnPause(TimeSpan playbackTime);
-		void OnSeek(TimeSpan newPlaybackTime);
+		bool OnPause();
+		bool OnPause(TimeSpan playbackTime);
+		bool OnSeek(TimeSpan newPlaybackTime);
 
 		// NOTE: Every frame to handle things like delayed playback start
 		void OnUpdateTick(bool isPlaying, TimeSpan playbackTime, TimeSpan currentMovieOffset, f32 currentPlaybackSpeed);
@@ -33,6 +36,10 @@ namespace Comfy::Studio::Editor
 		bool IsMoviePlayerValidAndReady() const;
 		bool IsMoviePlayerValidAndHasVideo() const;
 
+		bool IsInMovieStartDelay() const;
+
+		bool RegisterAsyncCallback(MoviePlayerAsyncCallbackFunc callbackFunc);
+		void ClearAsyncCallback();
 	private:
 		Render::IMoviePlayer* moviePlayer = nullptr;
 

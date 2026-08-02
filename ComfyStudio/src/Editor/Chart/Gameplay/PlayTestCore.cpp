@@ -1,4 +1,4 @@
-﻿#include "PlayTestCore.h"
+#include "PlayTestCore.h"
 #include "PlayTestWindow.h"
 #include "Core/ComfyStudioSettings.h"
 #include "Time/Stopwatch.h"
@@ -294,6 +294,7 @@ namespace Comfy::Studio::Editor
 		Impl(PlayTestWindow& window, PlayTestContext& context, PlayTestSharedContext& sharedContext)
 			: window(window), context(context), sharedContext(sharedContext)
 		{
+			ClearPreparationInfo();
 		}
 
 	public:
@@ -306,6 +307,8 @@ namespace Comfy::Studio::Editor
 
 			UpdateUserInput();
 			sharedContext.MoviePlaybackController->OnUpdateTick(GetIsPlayback(), GetPlaybackTime(), sharedContext.Chart->MovieOffset, sharedContext.SongVoice->GetPlaybackSpeed());
+
+			UpdatePreparation();
 
 			if (GetIsPlayback() && autoplayEnabled)
 				UpdateAutoplayInput();
@@ -321,7 +324,11 @@ namespace Comfy::Studio::Editor
 			DrawScoreText();
 			DrawPauseToggleFade();
 			DrawOverlayText();
-			DrawFadeInFadeOut();
+
+			if (IsPlayTestPreparing())
+				DrawBlackFullscreenQuad(1.0f);
+			else
+				DrawFadeInFadeOut();
 		}
 
 		void OverlayGui()
@@ -399,6 +406,20 @@ namespace Comfy::Studio::Editor
 			return sharedContext.SongVoice->GetIsPlaying();
 		}
 
+		bool IsPlayTestPreparing() const
+		{
+			return preparationInfo.playbackPreparationState.load(std::memory_order_acquire) != PlaybackPreparationState::None;
+		}
+
+		void CancelPlayTestPreparation()
+		{
+			if (IsPlayTestPreparing())
+			{
+				sharedContext.MoviePlaybackController->ClearAsyncCallback();
+				ClearPreparationInfo();
+			}
+		}
+
 	private:
 		void UpdateUserInput()
 		{
@@ -410,6 +431,9 @@ namespace Comfy::Studio::Editor
 
 			if (Input::IsAnyPressed(GlobalUserData.Input.Playtest_ReturnToEditorPrePlaytest, false))
 				FadeOutThenExit(PlayTestExitType::ReturnPrePlayTestTime);
+
+			if (IsPlayTestPreparing()) // Only allow exit play test when preparing
+				return;
 
 			if (Input::IsAnyPressed(GlobalUserData.Input.Playtest_ToggleAutoplay, false))
 				SetAutoplayEnabled(!GetAutoplayEnabled());
@@ -468,6 +492,23 @@ namespace Comfy::Studio::Editor
 					else
 						sliderTouchPointR.NormalizedPosition = 0.5f;
 				}
+			}
+		}
+
+		void UpdatePreparation()
+		{
+			const auto state = preparationInfo.playbackPreparationState.load(std::memory_order_acquire);
+
+			switch (state)
+			{
+			case PlaybackPreparationState::SeekCompleted:
+				OnPlayerSeekEnd();
+				break;
+			case PlaybackPreparationState::PlaybackStarted:
+				OnPlayerPreparationFinished();
+				break;
+			default:
+				break;
 			}
 		}
 
@@ -1005,6 +1046,7 @@ namespace Comfy::Studio::Editor
 
 			if (!fadeInOut.OutExitStopwatch.IsRunning())
 			{
+				CancelPlayTestPreparation();
 				fadeInOut.OutExitStopwatch.Restart();
 				fadeInOut.OutExitType = exitType;
 			}
@@ -1040,35 +1082,16 @@ namespace Comfy::Studio::Editor
 					sharedContext.ButtonSoundController->FadeOutLastChainSound(static_cast<ChainSoundSlot>(i));
 			}
 
+			if (IsPlayTestPreparing())
+				return;
+
 			holdState.ClearAll();
 
-			SetPlaybackTime(startTime);
-			sharedContext.SongVoice->SetIsPlaying(true);
-			sharedContext.MoviePlaybackController->OnResume(startTime);
-
-			chartDuration = sharedContext.Chart->DurationOrDefault();
-			availableTargetPairs.clear();
-			ChartToPlayTestTargets(*sharedContext.Chart, availableTargetPairs);
-			onScreenTargetPairs.clear();
-			onScreenTargetPairs.reserve(availableTargetPairs.size());
-
-			for (auto& pair : availableTargetPairs)
-			{
-				if (pair.TargetTime < startTime)
-				{
-					pair.NoLongerValid = true;
-
-					for (size_t i = 0; i < pair.TargetCount; i++)
-					{
-						// NOTE: Ensure all chains always have a valid start fragment
-						if (pair.Targets[i].Flags.IsChain)
-							ForEachFragmentInChain(availableTargetPairs, pair, pair.Targets[i], [&](auto& chainPair, auto& fragment) { chainPair.NoLongerValid = true; });
-					}
-				}
-			}
-
-			if (resetScore)
-				context.Score = {};
+#if 1 // NOTE: Reduce the movie delay in play test
+			BeginPlayTestPreparation(startTime, resetScore);
+#else
+			PreparePlayTestOld(startTime, resetScore);
+#endif
 		}
 
 		void UpdateAutoplayInput()
@@ -1486,6 +1509,138 @@ namespace Comfy::Studio::Editor
 			sharedContext.MoviePlaybackController->OnSeek(value);
 		}
 
+		void PreparePlayTestOld(TimeSpan startTime, bool resetScore)
+		{
+			SetPlaybackTime(startTime);
+			sharedContext.SongVoice->SetIsPlaying(true);
+			sharedContext.MoviePlaybackController->OnResume(startTime);
+
+			chartDuration = sharedContext.Chart->DurationOrDefault();
+			availableTargetPairs.clear();
+			ChartToPlayTestTargets(*sharedContext.Chart, availableTargetPairs);
+			onScreenTargetPairs.clear();
+			onScreenTargetPairs.reserve(availableTargetPairs.size());
+
+			for (auto& pair : availableTargetPairs)
+			{
+				if (pair.TargetTime < startTime)
+				{
+					pair.NoLongerValid = true;
+
+					for (size_t i = 0; i < pair.TargetCount; i++)
+					{
+						// NOTE: Ensure all chains always have a valid start fragment
+						if (pair.Targets[i].Flags.IsChain)
+							ForEachFragmentInChain(availableTargetPairs, pair, pair.Targets[i], [&](auto& chainPair, auto& fragment) { chainPair.NoLongerValid = true; });
+					}
+				}
+			}
+
+			if (resetScore)
+				context.Score = {};
+		}
+
+		void BeginPlayTestPreparation(TimeSpan startTime, bool resetScore)
+		{
+			// Init preparation info
+			preparationInfo.startTime = startTime;
+			preparationInfo.resetScore = resetScore;
+			preparationInfo.playbackPreparationState.store(PlaybackPreparationState::WaitingForSeekEnd, std::memory_order_release);
+
+			const bool registerCallbackSuccess = sharedContext.MoviePlaybackController->RegisterAsyncCallback([this](Comfy::Render::MoviePlayerAsyncCallbackParam param)
+			{
+				this->OnReceivePlayerEvent(param.Event);
+				return Render::MoviePlayerAsyncCallbackResult{};
+			});
+
+			sharedContext.SongVoice->SetPosition(startTime + sharedContext.Chart->SongOffset);
+			sharedContext.SongVoice->SetIsPlaying(false);
+			sharedContext.MoviePlaybackController->OnPause();
+			const bool seekSuccess = sharedContext.MoviePlaybackController->OnSeek(startTime);
+
+			if (!registerCallbackSuccess || !seekSuccess) // No player or movie
+			{
+				OnPlayerPreparationFinished();
+			}
+		}
+
+		void OnPlayerSeekEnd()
+		{
+			preparationInfo.playbackPreparationState.store(PlaybackPreparationState::WaitingForPlaying, std::memory_order_release);
+
+			sharedContext.MoviePlaybackController->OnResume(preparationInfo.startTime);
+			if (sharedContext.MoviePlaybackController->IsInMovieStartDelay())
+			{
+				OnPlayerPreparationFinished();
+			}
+		}
+
+		void ClearPreparationInfo()
+		{
+			preparationInfo.startTime = TimeSpan::Zero();
+			preparationInfo.resetScore = false;
+			preparationInfo.playbackPreparationState.store(PlaybackPreparationState::None, std::memory_order_release);
+		}
+
+		void OnPlayerPreparationFinished()
+		{
+			sharedContext.SongVoice->SetIsPlaying(true);
+
+			chartDuration = sharedContext.Chart->DurationOrDefault();
+			availableTargetPairs.clear();
+			ChartToPlayTestTargets(*sharedContext.Chart, availableTargetPairs);
+			onScreenTargetPairs.clear();
+			onScreenTargetPairs.reserve(availableTargetPairs.size());
+
+			for (auto& pair : availableTargetPairs)
+			{
+				if (pair.TargetTime < preparationInfo.startTime)
+				{
+					pair.NoLongerValid = true;
+
+					for (size_t i = 0; i < pair.TargetCount; i++)
+					{
+						// NOTE: Ensure all chains always have a valid start fragment
+						if (pair.Targets[i].Flags.IsChain)
+							ForEachFragmentInChain(availableTargetPairs, pair, pair.Targets[i], [&](auto& chainPair, auto& fragment) { chainPair.NoLongerValid = true; });
+					}
+				}
+			}
+
+			if (preparationInfo.resetScore)
+				context.Score = {};
+
+			fadeInOut.InStopwatch.Restart();
+
+			sharedContext.MoviePlaybackController->ClearAsyncCallback();
+			ClearPreparationInfo();
+		}
+
+		void OnReceivePlayerEvent(Render::MoviePlayerAsyncCallbackEvent event)
+		{
+			const auto state = preparationInfo.playbackPreparationState.load(std::memory_order_acquire);
+
+			switch (state)
+			{
+			case PlaybackPreparationState::WaitingForSeekEnd:
+				if (event == Render::MoviePlayerAsyncCallbackEvent::PlaybackSeekEnd)
+				{
+					auto expected = PlaybackPreparationState::WaitingForSeekEnd;
+					preparationInfo.playbackPreparationState.compare_exchange_strong(expected, PlaybackPreparationState::SeekCompleted, std::memory_order_acq_rel);
+				}
+				break;
+			case PlaybackPreparationState::WaitingForPlaying:
+				if (event == Render::MoviePlayerAsyncCallbackEvent::PlaybackStarted)
+				{
+					auto expected = PlaybackPreparationState::WaitingForPlaying;
+					preparationInfo.playbackPreparationState.compare_exchange_strong(expected, PlaybackPreparationState::PlaybackStarted, std::memory_order_acq_rel);
+				}
+				break;
+			default:
+				break;
+			}
+		}
+
 	private:
 		PlayTestWindow& window;
 		PlayTestContext& context;
@@ -1504,6 +1659,8 @@ namespace Comfy::Studio::Editor
 
 		Stopwatch lastSlideActionStopwatch = {};
 		SliderTouchPoint sliderTouchPointL = { -1.0f }, sliderTouchPointR = { +1.0f };
+
+		PlayTestPreparationInfo preparationInfo = {};
 
 		struct PauseFadeData
 		{
@@ -1591,6 +1748,7 @@ namespace Comfy::Studio::Editor
 
 	PlayTestCore::~PlayTestCore()
 	{
+		CancelPlayTestPreparation(); // Clear the lambda function (with [this] pointer) in the player
 	}
 
 	void PlayTestCore::UpdateTick()
@@ -1626,5 +1784,15 @@ namespace Comfy::Studio::Editor
 	bool PlayTestCore::GetIsPlayback() const
 	{
 		return impl->GetIsPlayback();
+	}
+
+	bool PlayTestCore::IsPlayTestPreparing() const
+	{
+		return impl->IsPlayTestPreparing();
+	}
+
+	void PlayTestCore::CancelPlayTestPreparation()
+	{
+		return impl->CancelPlayTestPreparation();
 	}
 }

@@ -29,27 +29,37 @@ namespace Comfy::Studio::Editor
 		}
 	}
 
-	void ChartMoviePlaybackController::OnPause(TimeSpan playbackTime)
+	bool ChartMoviePlaybackController::OnPause()
 	{
 		deferMovieStart = false;
 		if (!IsMoviePlayerValidAndHasVideo())
-			return;
+			return false;
+
+		deferMovieResyncAfterReload = false;
+		return moviePlayer->SetIsPlayingAsync(false);
+	}
+
+	bool ChartMoviePlaybackController::OnPause(TimeSpan playbackTime)
+	{
+		deferMovieStart = false;
+		if (!IsMoviePlayerValidAndHasVideo())
+			return false;
 
 		deferMovieResyncAfterReload = false;
 		moviePlayer->SetIsPlayingAsync(false);
 
 		if (playbackTime < movieOffset)
-			moviePlayer->SetPositionAsync(TimeSpan::Zero());
+			return moviePlayer->SetPositionAsync(TimeSpan::Zero());
 		else
-			moviePlayer->SetPositionAsync(playbackTime + movieOffset);
+			return moviePlayer->SetPositionAsync(playbackTime + movieOffset);
 	}
 
-	void ChartMoviePlaybackController::OnSeek(TimeSpan newPlaybackTime)
+	bool ChartMoviePlaybackController::OnSeek(TimeSpan newPlaybackTime)
 	{
 		if (!IsMoviePlayerValidAndHasVideo())
-			return;
+			return false;
 
-		moviePlayer->SetPositionAsync(newPlaybackTime + movieOffset);
+		return moviePlayer->SetPositionAsync(newPlaybackTime + movieOffset);
 	}
 
 	void ChartMoviePlaybackController::OnUpdateTick(bool isPlaying, TimeSpan playbackTime, TimeSpan currentMovieOffset, f32 currentPlaybackSpeed)
@@ -173,5 +183,23 @@ namespace Comfy::Studio::Editor
 	bool ChartMoviePlaybackController::IsMoviePlayerValidAndHasVideo() const
 	{
 		return (moviePlayer != nullptr && moviePlayer->GetHasVideoStream());
+	}
+
+	bool ChartMoviePlaybackController::IsInMovieStartDelay() const
+	{
+		return deferMovieStart;
+	}
+
+	bool ChartMoviePlaybackController::RegisterAsyncCallback(MoviePlayerAsyncCallbackFunc callbackFunc)
+	{
+		if (moviePlayer != nullptr)
+			return moviePlayer->RegisterAsyncCallback(callbackFunc);
+		return false;
+	}
+
+	void ChartMoviePlaybackController::ClearAsyncCallback()
+	{
+		if (moviePlayer != nullptr)
+			moviePlayer->RegisterAsyncCallback(nullptr);
 	}
 }

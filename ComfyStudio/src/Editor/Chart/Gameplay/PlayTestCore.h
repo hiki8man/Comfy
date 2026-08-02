@@ -63,6 +63,9 @@ namespace Comfy::Studio::Editor
 
 		bool GetIsPlayback() const;
 
+		bool IsPlayTestPreparing() const;
+		void CancelPlayTestPreparation();
+
 	private:
 		struct Impl;
 		std::unique_ptr<Impl> impl;
