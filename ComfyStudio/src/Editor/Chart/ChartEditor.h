@@ -81,7 +81,7 @@ namespace Comfy::Studio::Editor
 	{
 	public:
 		ChartEditor(ComfyStudioApplication& parent, EditorManager& editor);
-		~ChartEditor() = default;
+		~ChartEditor();
 
 	public:
 		const char* GetName() const override;
@@ -136,7 +136,7 @@ namespace Comfy::Studio::Editor
 		bool IsMovieAsyncLoading() const;
 
 		void ResumePlayback();
-		void PausePlayback();
+		void PausePlayback(bool synchronizeMoviePosition = true);
 		void StopPlayback();
 
 		bool GetIsPlayback() const;

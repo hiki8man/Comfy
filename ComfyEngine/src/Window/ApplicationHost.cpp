@@ -474,6 +474,8 @@ namespace Comfy
 			}
 			else
 			{
+				// Keep the intermediate overlapped-window state from being shown while restoring the saved placement.
+				::SendMessageW(Window.Handle, WM_SETREDRAW, FALSE, 0);
 				::SetWindowLongPtrW(Window.Handle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 
 				Window.Position = Window.PreFullScreenPosition;
@@ -491,6 +493,9 @@ namespace Comfy
 				windowPlacement.ptMaxPosition = { Window.Position.x, Window.Position.y };
 				windowPlacement.rcNormalPosition = { windowRestoreRegion.x, windowRestoreRegion.y, windowRestoreRegion.x + windowRestoreRegion.z, windowRestoreRegion.y + windowRestoreRegion.w };
 				::SetWindowPlacement(Window.Handle, &windowPlacement);
+
+				::SendMessageW(Window.Handle, WM_SETREDRAW, TRUE, 0);
+				::RedrawWindow(Window.Handle, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 			}
 #else
 			if (Window.IsFullscreen)

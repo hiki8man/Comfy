@@ -334,14 +334,15 @@ namespace Comfy::Studio::Editor
 		void OverlayGui()
 		{
 			bool contextMenuOpen = false;
+			const bool playbackInputEnabled = !IsPlayTestPreparing();
 			Gui::WindowContextMenu("PlayTestWindowContextMenu", [&]
 			{
 				contextMenuOpen = true;
 
-				if (Gui::MenuItem(GetIsPlayback() ? "Pause" : "Resume", Input::ToString(GlobalUserData.Input.Playtest_TogglePause).data()))
+				if (Gui::MenuItem(GetIsPlayback() ? "Pause" : "Resume", Input::ToString(GlobalUserData.Input.Playtest_TogglePause).data(), false, playbackInputEnabled))
 					TogglePause();
 
-				if (Gui::MenuItem("Restart from Reset Point", Input::ToString(GlobalUserData.Input.Playtest_RestartFromResetPoint).data()))
+				if (Gui::MenuItem("Restart from Reset Point", Input::ToString(GlobalUserData.Input.Playtest_RestartFromResetPoint).data(), false, playbackInputEnabled))
 					RestartFromResetPoint();
 
 				Gui::Separator();

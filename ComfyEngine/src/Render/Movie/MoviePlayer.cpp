@@ -7,6 +7,7 @@
 #include "Render/D3D11/D3D11OpaqueResource.h"
 #include "Render/Core/Renderer2D/AetRenderer.h"
 #include <atomic>
+#include <mutex>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfobjects.h>
@@ -424,6 +425,7 @@ namespace Comfy::Render
 		~D3D11MediaFoundationMediaEngineMoviePlayer() override
 		{
 			HRESULT hr = S_OK;
+			RegisterAsyncCallback({});
 
 			if (mediaEngine != nullptr)
 				hr = mediaEngine->Shutdown();
@@ -678,9 +680,10 @@ namespace Comfy::Render
 
 		bool RegisterAsyncCallback(MoviePlayerAsyncCallbackFunc callbackFunc) override
 		{
-			if (mediaEngine == nullptr)
+			if (mediaEngine == nullptr && callbackFunc)
 				return false;
 
+			const auto lock = std::scoped_lock(userAsyncCallbackMutex);
 			userAsyncCallbackFunc = std::move(callbackFunc);
 			return true;
 		}
@@ -1096,10 +1099,14 @@ namespace Comfy::Render
 				break;
 			}
 
-			if (userCallbackParam.Event != MoviePlayerAsyncCallbackEvent::Unknown && userAsyncCallbackFunc)
+			if (userCallbackParam.Event != MoviePlayerAsyncCallbackEvent::Unknown)
 			{
-				const auto userCallbackResult = userAsyncCallbackFunc(userCallbackParam);
-				static_cast<void>(userCallbackResult);
+				const auto lock = std::scoped_lock(userAsyncCallbackMutex);
+				if (userAsyncCallbackFunc)
+				{
+					const auto userCallbackResult = userAsyncCallbackFunc(userCallbackParam);
+					static_cast<void>(userCallbackResult);
+				}
 			}
 
 			return S_OK;
@@ -1136,6 +1143,7 @@ namespace Comfy::Render
 		ComPtr<IMFMediaEngineEx> mediaEngineEx = nullptr;
 
 		MoviePlayerAsyncCallbackFunc userAsyncCallbackFunc = {};
+		std::mutex userAsyncCallbackMutex = {};
 
 		std::string videoFilePath;
 		ComPtr<ContiniousMemoryBufferMFByteStream> entireFileContentMemoryByteStream = nullptr;

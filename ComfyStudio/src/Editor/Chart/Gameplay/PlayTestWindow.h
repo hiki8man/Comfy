@@ -79,6 +79,7 @@ namespace Comfy::Studio::Editor
 
 		void SetWorkingChart(Chart* chart);
 		void Restart(TimeSpan startTime);
+		void CancelPlayTestPreparation();
 
 		bool GetAutoplayEnabled() const;
 		void SetAutoplayEnabled(bool value);

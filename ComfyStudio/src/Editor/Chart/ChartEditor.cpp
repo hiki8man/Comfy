@@ -140,6 +140,12 @@ namespace Comfy::Studio::Editor
 		lastAutoSaveStowpatch.Restart();
 	}
 
+	ChartEditor::~ChartEditor()
+	{
+		// NOTE: PlayTestCore unregisters its movie callback and must be destroyed before the shared movie objects.
+		playTestWindow.reset();
+	}
+
 	const char* ChartEditor::GetName() const
 	{
 		return "Chart Editor";
@@ -375,7 +381,12 @@ namespace Comfy::Studio::Editor
 			constexpr bool startFadeOutAnimation = false;
 
 			if (parentApplication.GetExclusiveFullscreenGui())
+			{
+				if (playTestWindow != nullptr)
+					playTestWindow->CancelPlayTestPreparation();
+
 				StopPlaytesting(PlayTestExitType::ReturnCurrentTime, focusTimelineAndCloseActivePopup, startFadeOutAnimation);
+			}
 
 			applicationExitRequested = true;
 			return ApplicationHostCloseResponse::SupressExit;
@@ -1552,7 +1563,8 @@ namespace Comfy::Studio::Editor
 
 	void ChartEditor::StartPlaytesting(bool startFromCursor)
 	{
-		PausePlayback();
+		// NOTE: BeginPlayTestPreparation pauses and seeks the movie after registering its callback.
+		PausePlayback(false);
 		playbackTimeOnPlaytestStart = GetPlaybackTimeAsync();
 		timelineScrollXOnPlaytestStart = timeline->GetScrollX();
 
@@ -1572,6 +1584,7 @@ namespace Comfy::Studio::Editor
 	void ChartEditor::StopPlaytesting(PlayTestExitType exitType, bool focusTimelineAndCloseActivePopup, bool startFadeOutAnimation)
 	{
 		assert(exitType != PlayTestExitType::None);
+
 		parentApplication.SetExclusiveFullscreenGui(false);
 
 		PausePlayback();
@@ -1618,13 +1631,14 @@ namespace Comfy::Studio::Editor
 		moviePlaybackController.OnResume(GetPlaybackTimeAsync());
 	}
 
-	void ChartEditor::PausePlayback()
+	void ChartEditor::PausePlayback(bool synchronizeMoviePosition)
 	{
 		songVoice.SetIsPlaying(false);
 		isPlaying = false;
 
 		timeline->OnPlaybackPaused();
-		moviePlaybackController.OnPause(GetPlaybackTimeAsync());
+		if (synchronizeMoviePosition)
+			moviePlaybackController.OnPause(GetPlaybackTimeAsync());
 	}
 
 	void ChartEditor::StopPlayback()

@@ -50,6 +50,11 @@ namespace Comfy::Studio::Editor
 		return core.Restart(startTime);
 	}
 
+	void PlayTestWindow::CancelPlayTestPreparation()
+	{
+		return core.CancelPlayTestPreparation();
+	}
+
 	bool PlayTestWindow::GetAutoplayEnabled() const
 	{
 		return core.GetAutoplayEnabled();
