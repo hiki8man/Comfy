@@ -1,6 +1,7 @@
 #include "PlayTestCore.h"
 #include "PlayTestWindow.h"
 #include "Core/ComfyStudioSettings.h"
+#include "Editor/Chart/ChartEditor.h"
 #include "Time/Stopwatch.h"
 #include "Misc/StringUtil.h"
 
@@ -1563,10 +1564,14 @@ namespace Comfy::Studio::Editor
 			sharedContext.SongVoice->SetPosition(startTime + sharedContext.Chart->SongOffset);
 			sharedContext.SongVoice->SetIsPlaying(false);
 			sharedContext.MoviePlaybackController->OnPause();
+
 			bool waitForSeekEnd = false;
 			const bool seekSuccess = sharedContext.MoviePlaybackController->OnSeek(startTime, &waitForSeekEnd);
 
-			if (!registerCallbackSuccess || !seekSuccess) // no player or movie
+			const bool hasBackgroundMovieToDisplay = HasChartBackgroundDisplayTypeMovie(GlobalUserData.Interface.BackgroundDisplayType.PlaytestWithMovie);
+
+			if (!registerCallbackSuccess || !seekSuccess // No player or movie
+				|| !hasBackgroundMovieToDisplay) // NOTE: Non-movie playtest background does not consume movie frames (call GetCurrentTexture()), so Media Engine may not emit PlaybackSeekEnd
 			{
 				OnPlayerPreparationFinished();
 			}
